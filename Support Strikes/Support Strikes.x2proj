@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Default" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Guid>f626ddd4-175f-420a-a548-2f95ba4387d8</Guid>
+    <Name>WotC_Gameplay_SupportStrikes</Name>
+    <Description>Description of My XCOM 2 Mod.</Description>
+    <SteamPublishID>0</SteamPublishID>
+    <AssemblyName>Support Strikes</AssemblyName>
+    <RootNamespace>Support Strikes</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Config\Compatiblity\XComScatter.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Artillery\Mortar\XComGameData_SupportStrikes.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Artillery\Mortar\XComGameData_WeaponData.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\XComEditor.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\XComEngine.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\XComGame.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\XComGameData.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="ReadMe.txt" />
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Config" />
+    <Folder Include="Config\Compatiblity" />
+    <Folder Include="Config\Support Strikes" />
+    <Folder Include="Config\Support Strikes\Artillery" />
+    <Folder Include="Config\Support Strikes\Air" />
+    <Folder Include="Config\Support Strikes\Artillery\Mortar" />
+    <Folder Include="Localization" />
+    <Folder Include="Src" />
+    <Folder Include="Src\WotC_Gameplay_SupportStrikes" />
+    <Folder Include="Src\WotC_Gameplay_SupportStrikes\Classes" />
+  </ItemGroup>
+  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
+</Project>
