@@ -69,11 +69,6 @@ function AddProjectiles(int ProjectileIndex, int InputOffset)
 	SourceLocation.X += World.WORLD_StepSize * InputOffset;
 	SourceLocation.Y += World.WORLD_StepSize * InputOffset;
 
-	SFX = `CONTENT.RequestGameArchetype(ProjectileFireSound);
-
-	if (SFX != none && SFX.IsA('SoundCue'))
-		PlaySound(SoundCue(SFX), true, , , World.GetPositionFromTileCoordinates(SourceTile));
-
 	Unit.AddBlazingPinionsProjectile(SourceLocation, ImpactLocation, AbilityContext);
 
 //		`SHAPEMGR.DrawSphere(SourceLocation, vect(15,15,15), MakeLinearColor(0,0,1,1), true);
@@ -88,12 +83,19 @@ Begin:
 
 	Unit.CurrentFireAction = self;
 
-	Offset = `SYNC_RAND(1 , 2);
+	Offset = `SYNC_RAND(10 , 12);
 
 	for( TimeDelayIndex = 0; TimeDelayIndex < ProjectileTimeDelaySecArray.Length; ++TimeDelayIndex )
 	{
-		
+		//Play sound first before sleeping
+		SFX = `CONTENT.RequestGameArchetype(ProjectileFireSound);
+
+		if (SFX != none && SFX.IsA('SoundCue'))
+			PlaySound(SoundCue(SFX), true, , , AbilityContext.InputContext.TargetLocations[TimeDelayIndex]);
+
+		//Sleep before firing next projectile
 		Sleep(ProjectileTimeDelaySecArray[TimeDelayIndex] * GetDelayModifier());
+
 		AddProjectiles(TimeDelayIndex, Offset);
 	}
 

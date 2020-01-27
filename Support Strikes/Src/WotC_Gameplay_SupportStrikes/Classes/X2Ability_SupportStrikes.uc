@@ -51,6 +51,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 //	local X2Effect_Persistent					BlazingPinionsStage1Effect;
 
+
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Land_Off_MortarStrike_HE_Stage1');
 	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_archon_blazingpinions"; // TODO: Change this icon
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
@@ -131,20 +132,69 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 //	local X2Effect_RemoveEffects				RemoveEffects;
 	local X2Effect_ApplyWeaponDamage			DamageEffect;
 	local X2AbilityMultiTarget_Radius			RadMultiTarget;
+	local X2AbilityCost_ActionPoints			ActionPointCost;
+
+	/* Temp Shit */
+	local X2AbilityMultiTarget_Cylinder			MultiTarget;
+	local X2AbilityTarget_Cursor				CursorTarget;
+	local X2Condition_Visibility				VisibilityCondition;
+	local X2Condition_UnitProperty				UnitPropertyCondition;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.MortarStrike_HE_Stage2AbilityName);
-	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+//	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
 
-	Template.bDontDisplayInAbilitySummary = true;
-	Template.AbilityToHitCalc = default.DeadEye;
-	Template.AbilityTargetStyle = default.SelfTarget;
+	Template.ActionFireClass = class'X2Action_MortarStrikeStageTwo';
+	Template.bSkipExitCoverWhenFiring = true;
+
+	UnitPropertyCondition = new class'X2Condition_UnitProperty';
+    UnitPropertyCondition.ExcludeDead = false;
+    UnitPropertyCondition.ExcludeFriendlyToSource = false;
+    UnitPropertyCondition.ExcludeHostileToSource = false;
+    UnitPropertyCondition.FailOnNonUnits = false;
+	UnitPropertyCondition.ExcludeInStasis = false;
+    Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
+
+	/* Temp Shit */
+	ActionPointCost = new class'X2AbilityCost_ActionPoints';
+	ActionPointCost.iNumPoints = 1;
+	ActionPointCost.bConsumeAllPoints = true;
+	Template.AbilityCosts.AddItem(ActionPointCost);
+
+	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
+
+	Template.AddShooterEffectExclusions();
+
+	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_archon_blazingpinions"; // TODO: Change this icon
+	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+	Template.AbilitySourceName = 'eAbilitySource_Perk';
+	Template.Hostility = eHostility_Offensive;
+
+	Template.AbilityTargetStyle = new class'X2AbilityTarget_Cursor';
+	Template.TargetingMethod = class'X2TargetingMethod_ViperSpit';
+
+	MultiTarget = new class'X2AbilityMultiTarget_Cylinder';
+	MultiTarget.bUseOnlyGroundTiles = true;
+	MultiTarget.bIgnoreBlockingCover = true;
+	MultiTarget.bUseWeaponRadius = true;
+	MultiTarget.fTargetHeight = 10;
+	Template.AbilityMultiTargetStyle = MultiTarget;
+
+	CursorTarget = new class'X2AbilityTarget_Cursor';
+	Template.AbilityTargetStyle = CursorTarget;
+
+//
+//	Template.bDontDisplayInAbilitySummary = true;
+//	Template.AbilityToHitCalc = default.DeadEye;
+//	Template.AbilityTargetStyle = default.SelfTarget;
+
+
 
 	// This ability fires when the event DelayedExecuteRemoved fires on this unit
-	DelayedEventListener = new class'X2AbilityTrigger_EventListener';
-	DelayedEventListener.ListenerData.Deferral = ELD_OnStateSubmitted;
-	DelayedEventListener.ListenerData.EventID = default.MortarStrike_HE_Stage2TriggerName;
-	DelayedEventListener.ListenerData.Filter = eFilter_Unit;
-	Template.AbilityTriggers.AddItem(DelayedEventListener);
+//	DelayedEventListener = new class'X2AbilityTrigger_EventListener';
+//	DelayedEventListener.ListenerData.Deferral = ELD_OnStateSubmitted;
+//	DelayedEventListener.ListenerData.EventID = default.MortarStrike_HE_Stage2TriggerName;
+//	DelayedEventListener.ListenerData.Filter = eFilter_Unit;
+//	Template.AbilityTriggers.AddItem(DelayedEventListener);
 
 //	RemoveEffects = new class'X2Effect_RemoveEffects';
 //	RemoveEffects.EffectNamesToRemove.AddItem(default.BlazingPinionsStage1EffectName);
@@ -159,13 +209,13 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	// The MultiTarget Units are dealt this damage
 	DamageEffect = new class'X2Effect_ApplyWeaponDamage';
 	DamageEffect.bExplosiveDamage = true;
-	DamageEffect.bIgnoreBaseDamage = true;
+	DamageEffect.bIgnoreBaseDamage = false;
 	DamageEffect.bApplyWorldEffectsForEachTargetLocation = true;
 	Template.AddMultiTargetEffect(DamageEffect);
 
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-	Template.BuildVisualizationFn = MortarStrikeStage2_BuildVisualization;
-	Template.CinescriptCameraType = "Archon_BlazingPinions_Stage2";
+	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+//	Template.CinescriptCameraType = "Archon_BlazingPinions_Stage2";
 
 	Template.LostSpawnIncreasePerUse = default.MortarStrike_LostSpawnIncreasePerUse;
 	Template.bFrameEvenWhenUnitIsHidden = true;
