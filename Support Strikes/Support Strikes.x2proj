@@ -30,11 +30,20 @@
     <Content Include="Config\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Localization\XComGame.int">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="ReadMe.txt" />
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\ApplyEffectParametersObject.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_IRI_DelayedAbilityActivation.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">

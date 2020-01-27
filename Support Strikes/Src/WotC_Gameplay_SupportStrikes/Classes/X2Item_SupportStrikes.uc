@@ -38,7 +38,9 @@ static function X2DataTemplate CreateSupport_Land_Offensive_MortarStrike_HE_T1_W
 //	Template.DamageTypeTemplateName = 'NoFireExplosion';
 
 	Template.InventorySlot = eInvSlot_Utility;
+	Template.Abilities.AddItem('Ability_Support_Land_Off_MortarStrike_HE_Stage1');
 	Template.Abilities.AddItem('Ability_Support_Land_Off_MortarStrike_HE_Stage2');
+
 
 	// This all the resources; sounds, animations, models, physics, the works.
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_MortarStrike_CV";
