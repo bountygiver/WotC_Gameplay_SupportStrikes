@@ -12,6 +12,15 @@
     <Content Include="Config\Compatiblity\XComScatter.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_SupportStrikes.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_WeaponData.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Artillery\Mortar\XComCamera.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Config\Support Strikes\Artillery\Mortar\XComGameData_SupportStrikes.ini">
       <SubType>Content</SubType>
     </Content>
@@ -30,20 +39,38 @@
     <Content Include="Config\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Localization\XComGame.int">
+    <Content Include="Localization\Support Strikes\Air\Strafing Run\A10\XComGame.int">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\Support Strikes\Artillery\Mortar\XComGame.int">
       <SubType>Content</SubType>
     </Content>
     <Content Include="ReadMe.txt" />
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\ApplyEffectParametersObject.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_SupportStrikes.uc">
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2AbilityCost_SharedCharges.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_MortarStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_StrafingRun.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_MapCheck.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2DownloadableContentInfo_WotC_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_IRI_DelayedAbilityActivation.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnAOEIndicator.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">
@@ -54,10 +81,18 @@
     <Folder Include="Config" />
     <Folder Include="Config\Compatiblity" />
     <Folder Include="Config\Support Strikes" />
+    <Folder Include="Config\Support Strikes\Air\Strafing Run" />
+    <Folder Include="Config\Support Strikes\Air\Strafing Run\A10" />
     <Folder Include="Config\Support Strikes\Artillery" />
     <Folder Include="Config\Support Strikes\Air" />
     <Folder Include="Config\Support Strikes\Artillery\Mortar" />
     <Folder Include="Localization" />
+    <Folder Include="Localization\Support Strikes" />
+    <Folder Include="Localization\Support Strikes\Air\Strafing Run" />
+    <Folder Include="Localization\Support Strikes\Air\Strafing Run\A10" />
+    <Folder Include="Localization\Support Strikes\Artillery" />
+    <Folder Include="Localization\Support Strikes\Artillery\Mortar" />
+    <Folder Include="Localization\Support Strikes\Air" />
     <Folder Include="Src" />
     <Folder Include="Src\WotC_Gameplay_SupportStrikes" />
     <Folder Include="Src\WotC_Gameplay_SupportStrikes\Classes" />

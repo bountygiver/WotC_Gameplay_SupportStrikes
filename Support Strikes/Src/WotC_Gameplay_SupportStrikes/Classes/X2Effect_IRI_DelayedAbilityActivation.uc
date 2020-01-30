@@ -1,3 +1,4 @@
+// AUTHOR: Iridar
 class X2Effect_IRI_DelayedAbilityActivation extends X2Effect_DelayedAbilityActivation;
 
 static private function TriggerAssociatedEvent(X2Effect_Persistent PersistentEffect, const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState, bool bCleansed)

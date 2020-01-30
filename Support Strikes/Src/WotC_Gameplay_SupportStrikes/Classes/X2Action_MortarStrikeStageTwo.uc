@@ -69,6 +69,7 @@ function AddProjectiles(int ProjectileIndex, int InputOffset)
 	SourceLocation.X += World.WORLD_StepSize * InputOffset;
 	SourceLocation.Y += World.WORLD_StepSize * InputOffset;
 
+
 	Unit.AddBlazingPinionsProjectile(SourceLocation, ImpactLocation, AbilityContext);
 
 //		`SHAPEMGR.DrawSphere(SourceLocation, vect(15,15,15), MakeLinearColor(0,0,1,1), true);
@@ -94,7 +95,7 @@ Begin:
 			PlaySound(SoundCue(SFX), true, , , AbilityContext.InputContext.TargetLocations[TimeDelayIndex]);
 
 		//Sleep before firing next projectile
-		Sleep(ProjectileTimeDelaySecArray[TimeDelayIndex] * GetDelayModifier());
+		Sleep(ProjectileTimeDelaySecArray[TimeDelayIndex] + GetDelayModifier());
 
 		AddProjectiles(TimeDelayIndex, Offset);
 	}
@@ -106,7 +107,17 @@ Begin:
 
 	UnitPawn.SetCurrentWeapon(PreviousWeapon);
 
-	Sleep(0.5f * GetDelayModifier()); // Sleep to allow destruction to be seenw
+//	Sleep(0.5f * GetDelayModifier()); // Sleep to allow destruction to be seen
+	Sleep(0.5f);
 
 	CompleteAction();
+}
+
+function float GetDelayModifier()
+{
+//	Commented out until I figure out a way for it to play nice with Zip mode
+//	if( ShouldPlayZipMode() || ZombieMode() )
+//		return class'X2TacticalGameRuleset'.default.ZipModeDelayModifier;
+//	else
+		return `SYNC_FRAND(-.2, .3);
 }

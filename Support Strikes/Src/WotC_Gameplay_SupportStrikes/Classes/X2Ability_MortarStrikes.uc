@@ -1,18 +1,26 @@
-class X2Ability_SupportStrikes extends X2Ability
+class X2Ability_MortarStrikes extends X2Ability
 	config(GameData_SupportStrikes);
 
-var config int MortarStrike_Local_Cooldown;				//
-var config int MortarStrike_Global_Cooldown;			//
-var config int MortarStrike_Delay_Turns;				// Number of turns before the next ability will fire
-var config int MortarStrike_LostSpawnIncreasePerUse;	// Increases the number of lost per usage
-var config int MortarStrike_AdditionalSalvo_Turns;		// Number of turns that this ability will execute after the intial delay
-var config float MortarStrike_Impact_Radius_Meters;
-var config int MortarStrike_Environment_Damage_Amount;
-var config int MortarStrike_Shells_Per_Turn;
+var config int MortarStrike_HE_Local_Cooldown;				//
+var config int MortarStrike_HE_Global_Cooldown;			//
+var config int MortarStrike_HE_Delay_Turns;				// Number of turns before the next ability will fire
+var config int MortarStrike_HE_LostSpawnIncreasePerUse;	// Increases the number of lost per usage
+var config int MortarStrike_HE_AdditionalSalvo_Turns;		// Number of turns that this ability will execute after the intial delay
+var config int MortarStrike_HE_Shells_Per_Turn;
+var config bool MortarStrike_HE_Panic_Enable;
+var config int MortarStrike_HE_Panic_NumOfTurns;
+
+var config bool MortarStrike_HE_Disorient_Enable;
+var config int MortarStrike_HE_Disorient_NumOfTurns;
+
+//VFXs
+//var config string MortarStrike_HE_TargetVFX_Path;
 
 var name MortarStrike_HE_Stage2AbilityName;
 var name MortarStrike_HE_Stage2TriggerName;
-var name BlazingPinionsStage1EffectName;
+var name MortarStrike_HE_Stage1EffectName;
+
+
 
 static function array<X2DataTemplate> CreateTemplates()
 {
@@ -21,8 +29,6 @@ static function array<X2DataTemplate> CreateTemplates()
 //	Templates.AddItem(CreateSupport_Air_Offensive_CarpetBombing());
 //	Templates.AddItem(CreateSupport_Air_Offensive_PrecisionBombing());
 //
-//	Templates.AddItem(CreateSupport_Air_Offensive_PrecisionStrike());
-
 	Templates.AddItem(CreateSupport_Artillery_Offensive_MortarStrike_HE_Stage1());
 	Templates.AddItem(CreateSupport_Artillery_Offensive_MortarStrike_HE_Stage2());
 
@@ -42,15 +48,16 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	local X2AbilityTemplate						Template;
 	local X2AbilityCost_ActionPoints			ActionPointCost;
 	local X2AbilityCooldown_LocalAndGlobal		Cooldown;
-	local X2AbilityMultiTarget_Cylinder			MultiTarget;
+	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
 	local X2Effect_IRI_DelayedAbilityActivation DelayEffect_MortarStrike;
 	local X2Condition_Visibility				VisibilityCondition;
 	local int									idx;
-	//local int									AdditionalDelay;
 	local name									EffectName;
+	local X2Effect_SpawnAOEIndicator			MortarStrike_HE_Stage1TargetEffect;
+	local X2AbilityCost_SharedCharges			AmmoCost;
+	local X2Condition_MapCheck					MapCheck;
 
-//	local X2Effect_Persistent					BlazingPinionsStage1Effect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Land_Off_MortarStrike_HE_Stage1');
 
@@ -59,7 +66,13 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
 	Template.Hostility = eHostility_Offensive;
 
-//	Template.TwoTurnAttackAbility = default.MortarStrike_HE_Stage2AbilityName;
+	//The weapon template has the actual amount of ammo
+	Template.bUseAmmoAsChargesForHUD = true;
+	Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.STANDARD_GRENADE_PRIORITY;
+
+	//Ammo Cost
+	AmmoCost = new class'X2AbilityCost_SharedCharges';	
+	Template.AbilityCosts.AddItem(AmmoCost);
 
 	//	Targeting and Triggering
 	CursorTarget = new class'X2AbilityTarget_Cursor';
@@ -68,11 +81,9 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 	Template.TargetingMethod = class'X2TargetingMethod_ViperSpit';
 
-	MultiTarget = new class'X2AbilityMultiTarget_Cylinder';
-	MultiTarget.bUseOnlyGroundTiles = true;
+	MultiTarget = new class'X2AbilityMultiTarget_Radius';
 	MultiTarget.bIgnoreBlockingCover = true;
 	MultiTarget.bUseWeaponRadius = true;
-	MultiTarget.fTargetHeight = 10;
 	Template.AbilityMultiTargetStyle = MultiTarget;
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
@@ -84,46 +95,43 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
 	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal';
-	Cooldown.iNumTurns = default.MortarStrike_Local_Cooldown;
-	Cooldown.NumGlobalTurns = default.MortarStrike_Global_Cooldown;
+	Cooldown.iNumTurns = default.MortarStrike_HE_Local_Cooldown;
+	Cooldown.NumGlobalTurns = default.MortarStrike_HE_Global_Cooldown;
 	Template.AbilityCooldown = Cooldown;
 
-	//	Shooter Conditions
+	/* BEGIN Shooter Conditions */
 
-	//	TODO: Add living shooter property condition here
+	Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
 	Template.AddShooterEffectExclusions();
+
+	//Prevent the ability from executing if certain maps are loaded.
+	MapCheck = new class'X2Condition_MapCheck';
+	Template.AbilityShooterConditions.AddItem(MapCheck);
+
+	/* END Shooter Conditions */
 
 	VisibilityCondition = new class'X2Condition_Visibility';
 	VisibilityCondition.bVisibleToAnyAlly = true;
 	VisibilityCondition.bRequireLOS = false;
 	Template.AbilityTargetConditions.AddItem(VisibilityCondition);
 
-	
-//	AdditionalDelay = 0;
 	//Delayed Effect to cause the second Mortar Strike stage to occur
-	for (idx = 0; idx < (default.MortarStrike_AdditionalSalvo_Turns + 1); ++idx)
+	for (idx = 0; idx < (default.MortarStrike_HE_AdditionalSalvo_Turns + 1); ++idx)
 	{
 		EffectName = name("MortarStrikeStage1Delay_" $ idx);
-		//AdditionalDelay += default.MortarStrike_Delay_Turns;
 
 		DelayEffect_MortarStrike = new class 'X2Effect_IRI_DelayedAbilityActivation';
-		DelayEffect_MortarStrike.BuildPersistentEffect(default.MortarStrike_Delay_Turns + idx, false, false, false, eGameRule_PlayerTurnBegin);
+		DelayEffect_MortarStrike.BuildPersistentEffect(default.MortarStrike_HE_Delay_Turns + idx, false, false, false, eGameRule_PlayerTurnBegin);
 		DelayEffect_MortarStrike.EffectName = EffectName;
 		DelayEffect_MortarStrike.TriggerEventName = default.MortarStrike_HE_Stage2TriggerName;
 		DelayEffect_MortarStrike.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, , Template.AbilitySourceName);
 		Template.AddShooterEffect(DelayEffect_MortarStrike);
 
-		//AdditionalDelay++;
 	}
 
-	// An effect to attach Perk FX to
-//	BlazingPinionsStage1Effect = new class'X2Effect_Persistent';
-//	BlazingPinionsStage1Effect.BuildPersistentEffect(1, true, false, true);
-//	BlazingPinionsStage1Effect.EffectName = default.BlazingPinionsStage1EffectName;
-//	Template.AddShooterEffect(BlazingPinionsStage1Effect);
-
-	//  The target FX goes in target array as there will be no single target hit and no side effects of this touching a unit
-//	Template.AddShooterEffect(new class'X2Effect_ApplyBlazingPinionsTargetToWorld');
+	//  Spawn the spinny circle doodad
+	MortarStrike_HE_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
+	Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
 
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
@@ -136,31 +144,31 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 {
 	local X2AbilityTemplate						Template;
 	local X2AbilityTrigger_EventListener		DelayedEventListener;
-//	local X2Effect_RemoveEffects				RemoveEffects;
+	local X2Effect_RemoveEffects				RemoveEffects;
 	local X2Effect_ApplyWeaponDamage			DamageEffect;
 //	local X2AbilityMultiTarget_Radius			RadMultiTarget;
 	//local X2AbilityCost_ActionPoints			ActionPointCost;
 	local X2AbilityToHitCalc_StandardAim		StandardAim;
 	/* Temp Shit */
-	local X2AbilityMultiTarget_Cylinder			MultiTarget;
+	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
 //	local X2Condition_Visibility				VisibilityCondition;
 	local X2Condition_UnitProperty				UnitPropertyCondition;
+	local X2Effect_PersistentStatChange			DisorientedEffect;
+	local X2Effect_Panicked						PanickedEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.MortarStrike_HE_Stage2AbilityName);
-//	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
 
 	//	Targeting and Triggering
 	CursorTarget = new class'X2AbilityTarget_Cursor';
 	Template.AbilityTargetStyle = CursorTarget;
 	Template.TargetingMethod = class'X2TargetingMethod_ViperSpit';
 
-	//	TODO: Make this a radius, not a cylinder.
-	MultiTarget = new class'X2AbilityMultiTarget_Cylinder';
-	MultiTarget.bUseOnlyGroundTiles = true;
+	MultiTarget = new class'X2AbilityMultiTarget_Radius';
 	MultiTarget.bIgnoreBlockingCover = true;
 	MultiTarget.bUseWeaponRadius = true;
-	MultiTarget.fTargetHeight = 10;
+//	MultiTarget.fTargetHeight = 10;
 	Template.AbilityMultiTargetStyle = MultiTarget;
 
 	StandardAim = new class'X2AbilityToHitCalc_StandardAim';
@@ -177,13 +185,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	UnitPropertyCondition.ExcludeInStasis = false;
     Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
 
-	/* Temp Shit */
-	//	Stage 2 does not need AP cost
-	/*
-	ActionPointCost = new class'X2AbilityCost_ActionPoints';
-	ActionPointCost.iNumPoints = 1;
-	ActionPointCost.bConsumeAllPoints = true;
-	Template.AbilityCosts.AddItem(ActionPointCost);*/
+	Template.CinescriptCameraType = "MortarStrikeFinal";
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
 
@@ -200,16 +202,16 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	// This ability fires when the event DelayedExecuteRemoved fires on this unit
 	DelayedEventListener = new class'X2AbilityTrigger_EventListener';
 	DelayedEventListener.ListenerData.Deferral = ELD_OnStateSubmitted;
-	DelayedEventListener.ListenerData.EventID = 'Trigger_Support_Land_Off_MortarStrike_HE_Stage2';
+	DelayedEventListener.ListenerData.EventID = default.MortarStrike_HE_Stage2TriggerName;
 	DelayedEventListener.ListenerData.Filter = eFilter_None;	//	other filters don't work with effect-triggered event.
 	DelayedEventListener.ListenerData.EventFn = Mortar_Listener;
 	Template.AbilityTriggers.AddItem(DelayedEventListener);
 
-//	RemoveEffects = new class'X2Effect_RemoveEffects';
-//	RemoveEffects.EffectNamesToRemove.AddItem(default.BlazingPinionsStage1EffectName);
-//	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_ApplyBlazingPinionsTargetToWorld'.default.EffectName);
-//	Template.AddShooterEffect(RemoveEffects);
+	RemoveEffects = new class'X2Effect_RemoveEffects';
+	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
+	Template.AddShooterEffect(RemoveEffects);
 
+	// Damage and effects
 	// The MultiTarget Units are dealt this damage
 	DamageEffect = new class'X2Effect_ApplyWeaponDamage';
 	DamageEffect.bExplosiveDamage = true;
@@ -217,19 +219,77 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	DamageEffect.bApplyWorldEffectsForEachTargetLocation = true;
 	Template.AddMultiTargetEffect(DamageEffect);
 
+	if (default.MortarStrike_HE_Panic_Enable)
+	{
+
+		//  Panic effect
+		PanickedEffect = class'X2StatusEffects'.static.CreatePanickedStatusEffect();
+		PanickedEffect.iNumTurns = default.MortarStrike_HE_Panic_NumOfTurns;
+		PanickedEffect.MinStatContestResult = 2;
+		PanickedEffect.MaxStatContestResult = 3;
+		Template.AddTargetEffect(PanickedEffect);
+
+	}
+
+	if (default.MortarStrike_HE_Disorient_Enable)
+	{
+		//  Disorient effect
+		DisorientedEffect = class'X2StatusEffects'.static.CreateDisorientedStatusEffect();
+		DisorientedEffect.iNumTurns = default.MortarStrike_HE_Disorient_NumOfTurns;
+		DisorientedEffect.MinStatContestResult = 1;
+		DisorientedEffect.MaxStatContestResult = 1;
+		Template.AddTargetEffect(DisorientedEffect);
+	}
+
 	Template.ActionFireClass = class'X2Action_MortarStrikeStageTwo';
 	Template.bSkipExitCoverWhenFiring = true;
 
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+	Template.BuildVisualizationFn = Mortar_Stage2_BuildVisualization;
 	//Template.MergeVisualizationFn = Mortar_Stage2_MergeVisualization;
 //	Template.CinescriptCameraType = "Archon_BlazingPinions_Stage2";
 
-	Template.LostSpawnIncreasePerUse = default.MortarStrike_LostSpawnIncreasePerUse;
+	Template.LostSpawnIncreasePerUse = default.MortarStrike_HE_LostSpawnIncreasePerUse;
 	Template.bFrameEvenWhenUnitIsHidden = true;
 
 	return Template;
 }
+
+static function Mortar_Stage2_BuildVisualization(XComGameState VisualizeGameState)
+{
+	local XComGameStateVisualizationMgr		VisMgr;
+	local VisualizationActionMetadata		ActionMetadata;
+	local XComGameStateHistory				History;
+	local XComGameStateContext_Ability		Context;
+	local int								SourceUnitID;
+	local X2Action							FoundAction;
+	local X2Action_CameraLookAt				LookAtTargetAction;
+
+	//Iridar: Call the typical ability visuailzation. With just that, the ability would look like the soldier firing the rocket upwards, and then enemy getting damage for seemingly no reason.
+	class'X2Ability'.static.TypicalAbility_BuildVisualization(VisualizeGameState);
+
+	VisMgr = `XCOMVISUALIZATIONMGR;
+	History = `XCOMHISTORY;
+
+	Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
+	SourceUnitID = Context.InputContext.SourceObject.ObjectID;
+
+	ActionMetadata.StateObject_OldState = History.GetGameStateForObjectID(SourceUnitID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
+	ActionMetadata.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(SourceUnitID);
+
+	//Iridar: Find the Fire Action in vis tree configured by Typical Ability Build Viz
+	FoundAction = VisMgr.GetNodeOfType(VisMgr.BuildVisTree, class'X2Action_Fire');
+
+    if (FoundAction != none)
+    {
+        //    Add a camera action as a child to the Fire Action's parent, that lets both Fire Action and Camera Action run in parallel
+        //    pan camera towards the shooter for the firing animation
+        LookAtTargetAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(ActionMetadata, Context, false, FoundAction.ParentActions[0]));
+		LookAtTargetAction.LookAtLocation = Context.InputContext.TargetLocations[0];
+		LookAtTargetAction.LookAtDuration = 2.00f;
+	}
+}
+
 
 static function Mortar_Stage2_MergeVisualization(X2Action BuildTree, out X2Action VisualizationTree)
 {
@@ -366,7 +426,7 @@ static function EventListenerReturn Mortar_Listener(Object EventData, Object Eve
 	}
 	//HistoryIndex = `XCOMHISTORY.GetCurrentHistoryIndex();
 	//	Attempt to activate ability this many times
-	for (j = 0; j < default.MortarStrike_Shells_Per_Turn; j++)
+	for (j = 0; j < default.MortarStrike_HE_Shells_Per_Turn; j++)
 	{
 		if (`TACTICALRULES.GetGameRulesCache_Unit(SourceUnit.GetReference(), UnitCache))	//we get UnitCache for the soldier that triggered this event
 		{
@@ -530,5 +590,5 @@ defaultproperties
 {
 	MortarStrike_HE_Stage2AbilityName="Ability_Support_Land_Off_MortarStrike_HE_Stage2"
 	MortarStrike_HE_Stage2TriggerName="Trigger_Support_Land_Off_MortarStrike_HE_Stage2"
-	BlazingPinionsStage1EffectName="BlazingPinionsStage1Effect"
+	MortarStrike_HE_Stage1EffectName="Effect_Support_Land_Off_MortarStrike_HE_Stage1"
 }
