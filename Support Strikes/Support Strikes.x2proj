@@ -12,6 +12,9 @@
     <Content Include="Config\Compatiblity\XComScatter.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_CharacterStats.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_SupportStrikes.ini">
       <SubType>Content</SubType>
     </Content>
@@ -59,6 +62,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2CharacterTemplate_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Character_DummyTarget.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_MapCheck.uc">

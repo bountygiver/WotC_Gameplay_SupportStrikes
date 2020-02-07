@@ -6,7 +6,7 @@ simulated function ApplyCost(XComGameStateContext_Ability AbilityContext, XComGa
     local XComGameState_Unit     UnitState;
     local XComGameStateHistory     History;
     local XComGameState_Ability AbilityState;
-    local StateObjectReference     BondmateRef;
+    //local StateObjectReference     BondmateRef;
     local ETeam                    FiringUnitTeam;
     local name                    AbilityName;
 
