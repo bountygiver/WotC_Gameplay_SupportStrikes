@@ -18,9 +18,6 @@
     <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_WeaponData.ini">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Config\Support Strikes\Artillery\Mortar\XComCamera.ini">
-      <SubType>Content</SubType>
-    </Content>
     <Content Include="Config\Support Strikes\Artillery\Mortar\XComGameData_SupportStrikes.ini">
       <SubType>Content</SubType>
     </Content>
@@ -61,16 +58,28 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2CharacterTemplate_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_MapCheck.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2DownloadableContentInfo_WotC_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_DummyTargetUnit.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_IRI_DelayedAbilityActivation.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnAOEIndicator.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnDummyTarget.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_VanishNoBlocking.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">

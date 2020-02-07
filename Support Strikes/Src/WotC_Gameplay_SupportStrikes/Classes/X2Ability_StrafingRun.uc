@@ -8,6 +8,9 @@ var config int StrafingRun_A10_LostSpawnIncreasePerUse;	// Increases the number 
 var config bool StrafingRun_A10_Panic_Enable;
 var config int StrafingRun_A10_Panic_NumOfTurns;
 
+var config int StrafingRun_A10_TileWidth;
+var config int StrafingRun_A10_Range;
+
 var config bool StrafingRun_A10_Disorient_Enable;
 var config int StrafingRun_A10_Disorient_NumOfTurns;
 
@@ -28,6 +31,8 @@ static function array<X2DataTemplate> CreateTemplates()
 	Templates.AddItem(CreateSupport_Air_Offensive_StrafingRun_Stage1_SelectAngle());	//The final confirmation ability
 
 	Templates.AddItem(CreateSupport_Air_Offensive_StrafingRun_Stage2());
+
+	Templates.AddItem(CreateDummyTarget_Initialize());
 
 	return Templates;
 }
@@ -52,11 +57,13 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
 	local X2Condition_Visibility				VisibilityCondition;
-//	local X2Effect_SpawnAOEIndicator			StrafingRun_A10_Stage1TargetEffect;
+	local X2Condition_UnitProperty				UnitPropertyCondition;
+	local X2Effect_SpawnAOEIndicator			StrafingRun_A10_Stage1TargetEffect;
 //	local X2AbilityCost_Ammo					AmmoCost;
 	local X2Condition_MapCheck					MapCheck;
 	local X2Effect_Persistent					PersistentLocation;
 	local X2Effect_ApplyWeaponDamage			DamageEffect;
+	local X2Effect_SpawnDummyTarget				SpawnDummyTarget;
 
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Air_Off_StrafingRun_Stage1_SelectLocation');
@@ -64,18 +71,19 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_archon_blazingpinions"; // TODO: Change this icon
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
-	Template.Hostility = eHostility_Offensive;
+	Template.Hostility = eHostility_Neutral;
 
 	//	Targeting and Triggering
 	CursorTarget = new class'X2AbilityTarget_Cursor';
 	//CursorTarget.bRestrictToSquadsightRange = true;
 	Template.AbilityTargetStyle = CursorTarget;
 
-	Template.TargetingMethod = class'X2TargetingMethod_ViperSpit';
+	Template.AbilityToHitCalc = default.DeadEye;
+	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
+	Template.TargetingMethod = class'X2TargetingMethod_Pillar';
 
 	MultiTarget = new class'X2AbilityMultiTarget_Radius';
-	MultiTarget.bIgnoreBlockingCover = true;
-	MultiTarget.bUseWeaponRadius = true;
+	MultiTarget.fTargetRadius = 0.25;
 	Template.AbilityMultiTargetStyle = MultiTarget;
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
@@ -90,6 +98,7 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	Template.AddShooterEffect(PersistentLocation);
 
 	/* BEGIN Shooter Conditions */
+
 	Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
 	Template.AddShooterEffectExclusions();
 
@@ -97,13 +106,12 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	MapCheck = new class'X2Condition_MapCheck';
 	Template.AbilityShooterConditions.AddItem(MapCheck);
 
-	// Damage and effects
-	// The MultiTarget Units are dealt this damage
-	DamageEffect = new class'X2Effect_ApplyWeaponDamage';
-	DamageEffect.bExplosiveDamage = true;
-	DamageEffect.bIgnoreBaseDamage = false;
-	DamageEffect.bApplyWorldEffectsForEachTargetLocation = true;
-	Template.AddMultiTargetEffect(DamageEffect);
+	//Exclude dead units from using this ability
+	UnitPropertyCondition = new class'X2Condition_UnitProperty';
+	UnitPropertyCondition.ExcludeDead = true;
+	Template.AbilityShooterConditions.AddItem(UnitPropertyCondition);
+
+	Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
 
 	/* END Shooter Conditions */
 
@@ -112,10 +120,91 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	VisibilityCondition.bRequireLOS = false;
 	Template.AbilityTargetConditions.AddItem(VisibilityCondition);
 
+	// Effects
+	SpawnDummyTarget = new class'X2Effect_SpawnDummyTarget';
+	SpawnDummyTarget.BuildPersistentEffect(1, false, true, false, eGameRule_PlayerTurnEnd); //Make effect wear off at end of turn or when the angle is set
+	Template.AddShooterEffect(SpawnDummyTarget);
+
+	//  Spawn the spinny circle doodad
+	StrafingRun_A10_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
+	StrafingRun_A10_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.facingWaypoint_Icon_Red";
+	Template.AddShooterEffect(StrafingRun_A10_Stage1TargetEffect);
+
+	Template.bSkipFireAction = true;
+
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
-	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+	Template.BuildVisualizationFn = SR_Stage1_SpawnUnit_BuildVisualization;
 	
 	return Template;
+}
+
+simulated function SR_Stage1_SpawnUnit_BuildVisualization(XComGameState VisualizeGameState)
+{
+	local XComGameStateHistory History;
+	local XComGameStateContext_Ability Context;
+	local StateObjectReference InteractingUnitRef;
+	local VisualizationActionMetadata EmptyTrack;
+	local VisualizationActionMetadata SourceTrack, MimicBeaconTrack;
+	local XComGameState_Unit MimicSourceUnit, SpawnedUnit;
+	local UnitValue SpawnedUnitValue;
+	local X2Effect_SpawnDummyTarget		SpawnMimicBeaconEffect;
+	local X2Action_MimicBeaconThrow		FireAction;
+	local X2Action_PlayAnimation		AnimationAction;
+	local X2Action_PlayEffect			EffectAction;
+	local X2Action_Delay				DelayAction;
+	local X2Action						CommonParent;
+	local X2Action_PlaySoundAndFlyOver	SoundAndFlyover;
+
+	class'X2Ability'.static.TypicalAbility_BuildVisualization(VisualizeGameState);
+
+	History = `XCOMHISTORY;
+
+	Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
+	InteractingUnitRef = Context.InputContext.SourceObject;
+
+	//Configure the visualization track for the shooter
+	//****************************************************************************************
+	SourceTrack = EmptyTrack;
+	SourceTrack.StateObject_OldState = History.GetGameStateForObjectID(InteractingUnitRef.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
+	SourceTrack.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(InteractingUnitRef.ObjectID);
+	SourceTrack.VisualizeActor = History.GetVisualizer(InteractingUnitRef.ObjectID);
+
+	class'X2Action_ExitCover'.static.AddToVisualizationTree(SourceTrack, Context);
+	FireAction = X2Action_MimicBeaconThrow(class'X2Action_MimicBeaconThrow'.static.AddToVisualizationTree(SourceTrack, Context));
+	class'X2Action_EnterCover'.static.AddToVisualizationTree(SourceTrack, Context);
+
+	// Configure the visualization track for the mimic beacon
+	//******************************************************************************************
+	MimicSourceUnit = XComGameState_Unit(VisualizeGameState.GetGameStateForObjectID(InteractingUnitRef.ObjectID));
+	`assert(MimicSourceUnit != none);
+	MimicSourceUnit.GetUnitValue(class'X2Effect_SpawnUnit'.default.SpawnedUnitValueName, SpawnedUnitValue);
+
+	MimicBeaconTrack = EmptyTrack;
+	MimicBeaconTrack.StateObject_OldState = History.GetGameStateForObjectID(SpawnedUnitValue.fValue, eReturnType_Reference, VisualizeGameState.HistoryIndex);
+	MimicBeaconTrack.StateObject_NewState = MimicBeaconTrack.StateObject_OldState;
+	SpawnedUnit = XComGameState_Unit(MimicBeaconTrack.StateObject_NewState);
+
+	MimicBeaconTrack.VisualizeActor = History.GetVisualizer(SpawnedUnit.ObjectID);
+
+	// Set the Throwing Unit's FireAction to reference the spawned unit
+	FireAction.MimicBeaconUnitReference = SpawnedUnit.GetReference();
+	// Set the Throwing Unit's FireAction to reference the spawned unit
+	class'X2Action_WaitForAbilityEffect'.static.AddToVisualizationTree(MimicBeaconTrack, Context);
+
+	// Only one target effect and it is X2Effect_SpawnMimicBeacon
+	SpawnMimicBeaconEffect = X2Effect_SpawnDummyTarget(Context.ResultContext.ShooterEffectResults.Effects[0]);
+	
+	if( SpawnMimicBeaconEffect == none )
+	{
+		`RedScreenOnce("MimicBeacon_BuildVisualization: Missing X2Effect_SpawnMimicBeacon -dslonneger @gameplay");
+		return;
+	}	
+
+	CommonParent =  MimicBeaconTrack.LastActionAdded;
+
+	SpawnMimicBeaconEffect.AddSpawnVisualizationsToTracks_Parent(Context, SpawnedUnit, MimicBeaconTrack, MimicSourceUnit, DelayAction);
+
+	class'X2Action_SyncVisualizer'.static.AddToVisualizationTree(MimicBeaconTrack, Context, false, MimicBeaconTrack.LastActionAdded);
 }
 
 //This is the first state of the mortar strike ability. It's purely to set up the strike with a timer before the next ability is triggered
@@ -131,7 +220,8 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	local X2Condition_MapCheck					MapCheck;
 	local X2Effect_ApplyWeaponDamage			DamageEffect;
 	local X2AbilityMultiTarget_Line				LineMultiTarget;
-
+	local X2Effect_IRI_DelayedAbilityActivation DelayEffect_StrafingRun;
+	local X2Effect_RemoveEffects				RemoveEffects;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
 
@@ -145,15 +235,17 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.STANDARD_GRENADE_PRIORITY;
 
 	//Ammo Cost
-	AmmoCost = new class'X2AbilityCost_SharedCharges';	
-	Template.AbilityCosts.AddItem(AmmoCost);
+//	AmmoCost = new class'X2AbilityCost_SharedCharges';	
+//	Template.AbilityCosts.AddItem(AmmoCost);
 
 	//	Targeting and Triggering
 	CursorTarget = new class'X2AbilityTarget_Cursor';
-	//CursorTarget.bRestrictToSquadsightRange = true;
+	CursorTarget.FixedAbilityRange = default.StrafingRun_A10_Range;
 	Template.AbilityTargetStyle = CursorTarget;
 
 	LineMultiTarget = new class'X2AbilityMultiTarget_Line';
+	LineMultiTarget.TileWidthExtension = default.StrafingRun_A10_TileWidth;
+	LineMultiTarget.bSightRangeLimited = false;
 	Template.AbilityMultiTargetStyle = LineMultiTarget;
 
 	Template.TargetingMethod = class'X2TargetingMethod_Line';
@@ -162,10 +254,10 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 
 	//Use AP
 	//	Ability Costs
-	ActionPointCost = new class'X2AbilityCost_ActionPoints';
-	ActionPointCost.iNumPoints = 1;
-	ActionPointCost.bConsumeAllPoints = true;
-	Template.AbilityCosts.AddItem(ActionPointCost);
+//	ActionPointCost = new class'X2AbilityCost_ActionPoints';
+//	ActionPointCost.iNumPoints = 1;
+//	ActionPointCost.bConsumeAllPoints = true;
+//	Template.AbilityCosts.AddItem(ActionPointCost);
 
 	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal';
 	Cooldown.iNumTurns = default.StrafingRun_A10_Local_Cooldown;
@@ -188,19 +280,23 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	VisibilityCondition.bRequireLOS = false;
 	Template.AbilityTargetConditions.AddItem(VisibilityCondition);
 
-	// Damage and effects
-	// The MultiTarget Units are dealt this damage
-	DamageEffect = new class'X2Effect_ApplyWeaponDamage';
-	DamageEffect.bExplosiveDamage = true;
-	DamageEffect.bIgnoreBaseDamage = false;
-	DamageEffect.bApplyWorldEffectsForEachTargetLocation = true;
-	Template.AddMultiTargetEffect(DamageEffect);
+	RemoveEffects = new class'X2Effect_RemoveEffects';
+	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnDummyTarget'.default.EffectName);
+	Template.AddShooterEffect(RemoveEffects);
+
+	DelayEffect_StrafingRun = new class 'X2Effect_IRI_DelayedAbilityActivation';
+	DelayEffect_StrafingRun.BuildPersistentEffect(default.StrafingRun_A10_Delay_Turns, false, false, false, eGameRule_PlayerTurnBegin);
+	DelayEffect_StrafingRun.EffectName = 'SR_Stage1Delay';
+	DelayEffect_StrafingRun.TriggerEventName = default.StrafingRun_A10_Stage2_FinalTriggerName;
+	DelayEffect_StrafingRun.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, , Template.AbilitySourceName);
+	Template.AddShooterEffect(DelayEffect_StrafingRun);
 
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 	
 	return Template;
 }
+
 
 //The actual ability
 static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage2()
@@ -305,7 +401,44 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage2()
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 
 	Template.LostSpawnIncreasePerUse = default.StrafingRun_A10_LostSpawnIncreasePerUse;
+	Template.ChosenActivationIncreasePerUse = class'X2AbilityTemplateManager'.default.NonAggressiveChosenActivationIncreasePerUse;
+
 	Template.bFrameEvenWhenUnitIsHidden = true;
+
+	return Template;
+}
+
+// Special ability for the dummy target
+// It's immune to everything, can't be hit, and has code required for removal.
+static function X2AbilityTemplate CreateDummyTarget_Initialize()
+{
+	local X2AbilityTemplate Template;
+	local X2Effect_DummyTargetUnit DummyImmunityEffect;
+	local X2Effect_VanishNoBlocking VanishEffect;
+
+	`CREATE_X2ABILITY_TEMPLATE(Template, 'DummyTargetInitialize');
+
+	Template.AbilitySourceName = 'eAbilitySource_Perk';
+	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+	Template.Hostility = eHostility_Neutral;
+
+	Template.AbilityToHitCalc = default.DeadEye;
+	Template.AbilityTargetStyle = default.SelfTarget;
+	Template.AbilityTriggers.AddItem(default.UnitPostBeginPlayTrigger);
+
+	// Build the immunities
+	DummyImmunityEffect = new class'X2Effect_DummyTargetUnit';
+	DummyImmunityEffect.BuildPersistentEffect(1, false, true, false, eGameRule_PlayerTurnEnd);
+	Template.AddShooterEffect(DummyImmunityEffect);
+
+	// Cosmetic vanish effect so the unit doesn't reveal by accident
+	VanishEffect = new class'X2Effect_VanishNoBlocking';
+	VanishEffect.BuildPersistentEffect(1, false, true, false, eGameRule_PlayerTurnEnd);
+	Template.AddTargetEffect(VanishEffect);
+
+	Template.bSkipFireAction = true;
+	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 
 	return Template;
 }

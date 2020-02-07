@@ -1,6 +1,13 @@
 //---------------------------------------------------------------------------------------
 //  Copyright (c) 2016 Firaxis Games, Inc. All rights reserved.
 //---------------------------------------------------------------------------------------
+
+//
+// AUTHOR:	E3245
+// DESC:	Spawns a Particle System representing the AOE indicator. Can be used to spawn other PS.
+//
+//
+
 class X2Effect_SpawnAOEIndicator extends X2Effect_Persistent config(GameData);
 
 var config string VFXPath;
