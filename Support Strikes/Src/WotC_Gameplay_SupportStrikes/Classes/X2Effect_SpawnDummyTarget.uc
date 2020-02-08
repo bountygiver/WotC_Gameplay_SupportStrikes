@@ -6,12 +6,14 @@
 
 class X2Effect_SpawnDummyTarget extends X2Effect_SpawnUnit;
 
+var name GiveItemName;
+
 function vector GetSpawnLocation(const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState)
 {
 
 	if(ApplyEffectParameters.AbilityInputContext.TargetLocations.Length == 0)
 	{
-		`Redscreen("Attempting to create X2Effect_SpawnDummyTarget without a target location! @dslonneger");
+		`LOG("Attempting to create X2Effect_SpawnDummyTarget without a target location!",, 'IRI_SUPPORT_STRIKES');
 		return vect(0,0,0);
 	}
 
@@ -21,14 +23,55 @@ function vector GetSpawnLocation(const out EffectAppliedData ApplyEffectParamete
 // Get the team that this unit should be added to
 function ETeam GetTeam(const out EffectAppliedData ApplyEffectParameters)
 {
-	return GetSourceUnitsTeam(ApplyEffectParameters);
+	return GetSourceUnitsTeam(ApplyEffectParameters, true);
 }
 
-function AddSpawnVisualizationsToTracks_Parent(XComGameStateContext Context, XComGameState_Unit SpawnedUnit, out VisualizationActionMetadata SpawnedUnitTrack,
-										XComGameState_Unit EffectTargetUnit, X2Action Parent)
+
+//		Both of these seem to be never called.
+//	Remove all abilities except 1, and make the ability the Select 2
+/*
+simulated function ModifyAbilitiesPreActivation(StateObjectReference NewUnitRef, out array<AbilitySetupData> AbilityData, XComGameState NewGameState)
 {
-	class'X2Action_ShowSpawnedUnit'.static.AddToVisualizationTree(SpawnedUnitTrack, Context, false, Parent);
+	local AbilitySetupData SetupData;
+
+	`LOG("Modifying abilities for newly-spawned Dummy Target",, 'IRI_SUPPORT_STRIKES');
+
+	SetupData.TemplateName = 'Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle';
+	SetupData.Template = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate('Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
+	SetupData.SourceWeaponRef.ObjectID = 0;
+	SetupData.SourceAmmoRef.ObjectID = 0;
+
+	AbilityData.AddItem(SetupData);
 }
+*/
+/*
+simulated function ModifyItemsPreActivation(StateObjectReference NewUnitRef, XComGameState NewGameState)
+{
+	local XComGameState_Unit	UnitState;
+	local XComGameState_Item	ItemState;
+	local X2EquipmentTemplate	ItemTemplate;
+
+	// Remove all utility, secondary weapon, and heavy weapon items from the Ghost
+	UnitState = XComGameState_Unit(NewGameState.GetGameStateForObjectID(NewUnitRef.ObjectID));
+
+	if (GiveItemName != '')
+	{
+		ItemTemplate = X2EquipmentTemplate(class'X2ItemTemplateManager'.static.GetItemTemplateManager().FindItemTemplate(GiveItemName));
+		`LOG("Adding item to Spawned Unit: " @ GiveItemName @ ItemTemplate.InventorySlot,, 'IRI_SUPPORT_STRIKES');
+
+		if (ItemTemplate != none)
+		{
+			ItemState = ItemTemplate.CreateInstanceFromTemplate(NewGameState);
+			
+			if (UnitState.AddItemToInventory(ItemState, ItemTemplate.InventorySlot, NewGameState))
+			{
+				`LOG("Success",, 'IRI_SUPPORT_STRIKES');
+			}
+			else `LOG("Fail",, 'IRI_SUPPORT_STRIKES');
+		}
+	}
+
+}*/
 
 function OnSpawnComplete(const out EffectAppliedData ApplyEffectParameters, StateObjectReference NewUnitRef, XComGameState NewGameState, XComGameState_Effect NewEffectState)
 {
@@ -43,7 +86,7 @@ function OnSpawnComplete(const out EffectAppliedData ApplyEffectParameters, Stat
 	SelfUnit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(NewUnitRef.ObjectID));
 
 	SelfUnit.ActionPoints.Length = 0;
-	SelfUnit.SetUnitFloatValue('NewSpawnedUnit', 1, eCleanup_BeginTactical);
+	SelfUnit.SetUnitFloatValue('Support_Strike_Dummy_Target_SourceUnitID', SourceUnitGameState.ObjectID, eCleanup_BeginTactical);
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// X2Effect_SpawnMimicBeacon:
@@ -58,8 +101,6 @@ function OnSpawnComplete(const out EffectAppliedData ApplyEffectParameters, Stat
 
 defaultproperties
 {
-	UnitToSpawnName="DummyPiSTarget"
-	bCopyTargetAppearance=false
+	UnitToSpawnName="Support_Strikes_Dummy_Target"
 	bKnockbackAffectsSpawnLocation=false
-	EffectName="SpawnDummyTarget"
 }

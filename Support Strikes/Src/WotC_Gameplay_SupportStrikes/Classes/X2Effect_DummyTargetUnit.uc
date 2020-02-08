@@ -23,8 +23,8 @@ simulated function OnEffectRemoved(const out EffectAppliedData ApplyEffectParame
 
 simulated function AddX2ActionsForVisualization_Removed(XComGameState VisualizeGameState, out VisualizationActionMetadata ActionMetadata, const name EffectApplyResult, XComGameState_Effect RemovedEffect)
 {
-	local X2Action_MimicBeaconEnd MimicEndAction;
-	local XComGameState_Unit UnitState;
+	//local X2Action_MimicBeaconEnd MimicEndAction;
+	//local XComGameState_Unit UnitState;
 
 	super.AddX2ActionsForVisualization_Removed(VisualizeGameState, ActionMetadata, EffectApplyResult, RemovedEffect);
 
@@ -33,9 +33,10 @@ simulated function AddX2ActionsForVisualization_Removed(XComGameState VisualizeG
 		return;
 	}
 
-	MimicEndAction = X2Action_MimicBeaconEnd(class'X2Action_MimicBeaconEnd'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
+	//MimicEndAction = X2Action_MimicBeaconEnd(class'X2Action_MimicBeaconEnd'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
+	class'X2Action_MimicBeaconEnd'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded);
 
-	UnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState);
+	//UnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState);
 }
 
 //simulated function AddX2ActionsForVisualization_Sync( XComGameState VisualizeGameState, out VisualizationActionMetadata ActionMetadata )
