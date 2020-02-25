@@ -27,6 +27,12 @@
     <Content Include="Config\Support Strikes\Artillery\Mortar\XComGameData_WeaponData.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\Support Strikes\Orbital\IonCannon\XComGameData_SupportStrikes.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Orbital\IonCannon\XComGameData_WeaponData.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Config\XComEditor.ini">
       <SubType>Content</SubType>
     </Content>
@@ -36,6 +42,9 @@
     <Content Include="Config\XComGame.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\XComGameCore.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Config\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
@@ -43,6 +52,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Localization\Support Strikes\Artillery\Mortar\XComGame.int">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\Support Strikes\Orbital\Ion Cannon\XComGame.int">
       <SubType>Content</SubType>
     </Content>
     <Content Include="ReadMe.txt" />
@@ -55,13 +67,22 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_MortarStrikes.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_OrbitalCannon.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_StrafingRun.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Fire_IonCannon.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Fire_StrafingRun_A10.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2CharacterTemplate_SupportStrikes.uc">
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_StartStopSoundCue.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Character_DummyTarget.uc">
@@ -73,19 +94,22 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2DownloadableContentInfo_WotC_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_ApplySmokeMortarToWorld.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_DummyTargetUnit.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_IRI_DelayedAbilityActivation.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SmokeMortar.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnAOEIndicator.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnDummyTarget.uc">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_VanishNoBlocking.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">
@@ -101,6 +125,8 @@
     <Folder Include="Config\Support Strikes\Artillery" />
     <Folder Include="Config\Support Strikes\Air" />
     <Folder Include="Config\Support Strikes\Artillery\Mortar" />
+    <Folder Include="Config\Support Strikes\Orbital" />
+    <Folder Include="Config\Support Strikes\Orbital\IonCannon" />
     <Folder Include="Localization" />
     <Folder Include="Localization\Support Strikes" />
     <Folder Include="Localization\Support Strikes\Air\Strafing Run" />
@@ -108,6 +134,8 @@
     <Folder Include="Localization\Support Strikes\Artillery" />
     <Folder Include="Localization\Support Strikes\Artillery\Mortar" />
     <Folder Include="Localization\Support Strikes\Air" />
+    <Folder Include="Localization\Support Strikes\Orbital" />
+    <Folder Include="Localization\Support Strikes\Orbital\Ion Cannon" />
     <Folder Include="Src" />
     <Folder Include="Src\WotC_Gameplay_SupportStrikes" />
     <Folder Include="Src\WotC_Gameplay_SupportStrikes\Classes" />

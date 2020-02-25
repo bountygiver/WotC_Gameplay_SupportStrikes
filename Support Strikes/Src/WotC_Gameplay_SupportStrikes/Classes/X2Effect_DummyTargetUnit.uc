@@ -1,3 +1,8 @@
+//
+// AUTHOR:	E3245
+// DESC:	Not to be confused with X2Effect_SpawnDummyTarget. 
+//			This makes the unit immune to all effects in the game and kills the unit upon removal
+//
 class X2Effect_DummyTargetUnit extends X2Effect_Persistent config(GameCore);
 
 function ModifyTurnStartActionPoints(XComGameState_Unit UnitState, out array<name> ActionPoints, XComGameState_Effect EffectState)
@@ -12,13 +17,19 @@ simulated function OnEffectRemoved(const out EffectAppliedData ApplyEffectParame
 	super.OnEffectRemoved(ApplyEffectParameters, NewGameState, bCleansed, RemovedEffectState);
 
 	UnitSelf = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ApplyEffectParameters.TargetStateObjectRef.ObjectID));
+
 	if( UnitSelf != None )
 	{
-		UnitSelf = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitSelf.ObjectID));
-
-		// Remove the dead unit from play
-		`XEVENTMGR.TriggerEvent('UnitRemovedFromPlay', UnitSelf, UnitSelf, NewGameState);
+		//The unit is removed from the gamestate and other checks but still exists
+		UnitSelf.RemoveUnitFromPlay();
 	}
+//	if( UnitSelf != None )
+//	{
+//		UnitSelf = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitSelf.ObjectID));
+//
+//		// Remove the dead unit from play
+//		`XEVENTMGR.TriggerEvent('UnitRemovedFromPlay', UnitSelf, UnitSelf, NewGameState);
+//	}
 }
 
 simulated function AddX2ActionsForVisualization_Removed(XComGameState VisualizeGameState, out VisualizationActionMetadata ActionMetadata, const name EffectApplyResult, XComGameState_Effect RemovedEffect)

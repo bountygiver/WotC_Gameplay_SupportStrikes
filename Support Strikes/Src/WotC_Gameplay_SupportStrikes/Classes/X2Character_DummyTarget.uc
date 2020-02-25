@@ -15,10 +15,11 @@ static function X2CharacterTemplate Create_DummyTargetTemplate()
 
 	`CREATE_X2CHARACTER_TEMPLATE(CharTemplate, 'Support_Strikes_Dummy_Target');
 
-	CharTemplate.strPawnArchetypes.AddItem("GameUnit_MimicBeacon.ARC_MimicBeacon_M");
-	CharTemplate.strPawnArchetypes.AddItem("GameUnit_MimicBeacon.ARC_MimicBeacon_F");
-
+//	CharTemplate.strPawnArchetypes.AddItem("GameUnit_MimicBeacon.ARC_MimicBeacon_M");
+//	CharTemplate.strPawnArchetypes.AddItem("GameUnit_MimicBeacon.ARC_MimicBeacon_F");
+	CharTemplate.strPawnArchetypes.AddItem("ZZZ_SupportStrike_Data.Archetypes.ARC_GameUnit_DummyTarget");
 	CharTemplate.UnitSize = 1;
+	CharTemplate.UnitHeight = 2;
 
 	// Traversal Rules
 	CharTemplate.bCanUse_eTraversal_Normal = true;
@@ -55,7 +56,14 @@ static function X2CharacterTemplate Create_DummyTargetTemplate()
 	CharTemplate.bDisplayUIUnitFlag = false;
 
 	CharTemplate.bNeverSelectable = false;
+
+	//Leave a body at the very least for the stage 2 ability
+	CharTemplate.bDontClearRemovedFromPlay = true;
+
 	CharTemplate.DefaultLoadout = 'SupportStrikes_DummyTarget_Loadout';
+
+	CharTemplate.Abilities.AddItem('DummyTargetInitialize');
+//	CharTemplate.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
 
 	//CharTemplate.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
 	//CharTemplate.Abilities.AddItem('Ability_Support_Land_Off_StrafingRun_A10_Stage2');

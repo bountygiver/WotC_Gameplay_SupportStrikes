@@ -1,12 +1,11 @@
 //-----------------------------------------------------------
 // Copy of X2Action_BlazingPinionsStage2 with some minor modifications
 //-----------------------------------------------------------
-class X2Action_MortarStrikeStageTwo extends X2Action_Fire config(GameData);
+class X2Action_Fire_IonCannon extends X2Action_Fire config(GameData);
 
 var config array<float> ProjectileTimeDelaySecArray;
 
-var config string		ProjectileFireSound;
-var string				OverrideProjectileFireSound;
+var config string		ProjectileExplosionSound;
 
 var int Offset;
 
@@ -45,13 +44,12 @@ function NotifyTargetsAbilityApplied()
 	ProjectileHit = true;
 }
 
-function AddProjectiles(int ProjectileIndex, int InputOffset)
+function AddProjectiles(int ProjectileIndex)
 {
 	local TTile SourceTile;
 	local XComWorldData World;
 	local vector SourceLocation, ImpactLocation;
 	local int ZValue;
-
 
 	World = `XWORLD;
 
@@ -68,27 +66,17 @@ function AddProjectiles(int ProjectileIndex, int InputOffset)
 	SourceTile.Z = ZValue;
 	SourceLocation = World.GetPositionFromTileCoordinates(SourceTile);
 
-	SourceLocation.X += World.WORLD_StepSize * InputOffset;
-	SourceLocation.Y += World.WORLD_StepSize * InputOffset;
-
-
 	Unit.AddBlazingPinionsProjectile(SourceLocation, ImpactLocation, AbilityContext);
 
 //		`SHAPEMGR.DrawSphere(SourceLocation, vect(15,15,15), MakeLinearColor(0,0,1,1), true);
 //		`SHAPEMGR.DrawSphere(ImpactLocation, vect(15,15,15), MakeLinearColor(0,0,1,1), true);
 }
 
-function PlaySoundCustom(int Index)
+
+function PlaySoundCustom(int Index, string path)
 {
-	local string SFXToPlay;
-
-	SFXToPlay = ProjectileFireSound;
-
-	if (OverrideProjectileFireSound != "")
-		SFXToPlay = OverrideProjectileFireSound;
-
 	//Play sound
-	SFX = `CONTENT.RequestGameArchetype(SFXToPlay);
+	SFX = `CONTENT.RequestGameArchetype(path);
 
 	if (SFX != none && SFX.IsA('SoundCue'))
 		PlaySound(SoundCue(SFX), true, , , AbilityContext.InputContext.TargetLocations[Index]);
@@ -102,16 +90,13 @@ Begin:
 
 	Unit.CurrentFireAction = self;
 
-	Offset = `SYNC_RAND(10 , 12);
-
 	for( TimeDelayIndex = 0; TimeDelayIndex < ProjectileTimeDelaySecArray.Length; ++TimeDelayIndex )
 	{
-		PlaySoundCustom(TimeDelayIndex);
-
 		//Sleep before firing next projectile
 		Sleep(ProjectileTimeDelaySecArray[TimeDelayIndex] + GetDelayModifier());
 
-		AddProjectiles(TimeDelayIndex, Offset);
+		AddProjectiles(TimeDelayIndex);
+//		PlaySoundCustom(TimeDelayIndex, ProjectileExplosionSound);
 	}
 
 	while (!ProjectileHit)
@@ -133,5 +118,5 @@ function float GetDelayModifier()
 //	if( ShouldPlayZipMode() || ZombieMode() )
 //		return class'X2TacticalGameRuleset'.default.ZipModeDelayModifier;
 //	else
-		return `SYNC_FRAND(-.2, .3);
+		return 0.0f;
 }

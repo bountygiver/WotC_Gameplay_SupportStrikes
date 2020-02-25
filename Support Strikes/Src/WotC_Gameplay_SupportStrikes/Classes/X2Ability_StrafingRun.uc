@@ -58,7 +58,7 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	local X2AbilityTarget_Cursor				CursorTarget;
 	local X2Condition_Visibility				VisibilityCondition;
 	local X2Condition_UnitProperty				UnitPropertyCondition;
-	local X2Effect_SpawnAOEIndicator			StrafingRun_A10_Stage1TargetEffect;
+//	local X2Effect_SpawnAOEIndicator			StrafingRun_A10_Stage1TargetEffect;
 //	local X2AbilityCost_Ammo					AmmoCost;
 	local X2Condition_MapCheck					MapCheck;
 	local X2Effect_Persistent					PersistentLocation;
@@ -127,9 +127,9 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	Template.AddShooterEffect(SpawnDummyTarget);
 
 	//  Spawn the spinny circle doodad
-	StrafingRun_A10_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
-	StrafingRun_A10_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.facingWaypoint_Icon_Red";
-	Template.AddShooterEffect(StrafingRun_A10_Stage1TargetEffect);
+//	StrafingRun_A10_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
+//	StrafingRun_A10_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.facingWaypoint_Icon_Red";
+//	Template.AddShooterEffect(StrafingRun_A10_Stage1TargetEffect);
 
 	Template.bSkipFireAction = true;
 
@@ -193,11 +193,12 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	//local X2Effect_ApplyWeaponDamage			DamageEffect;
 	local X2AbilityMultiTarget_Line				LineMultiTarget;
 	local X2Effect_IRI_DelayedAbilityActivation DelayEffect_StrafingRun;
-	//local X2Effect_RemoveEffects				RemoveEffects;
+	local X2Effect_RemoveEffects				RemoveEffects;
+//	local X2Effect_KillUnit						KillUnitEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
 
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_archon_blazingpinions"; // TODO: Change this icon
+	Template.IconImage = "img:///UILibrary_XPACK_Common.PerkIcons.UIPerk_juggernaut"; // TODO: Change this icon
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
 	Template.AbilitySourceName = 'eAbilitySource_Item';
 	Template.Hostility = eHostility_Offensive;
@@ -236,10 +237,11 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 
 	//	This is a cursor-targeted ability, it cannot possibly have Target Conditions.
 
-	//	With this you would be trying to remove the effect from the Dummy Unit. Won't work. 
-	//RemoveEffects = new class'X2Effect_RemoveEffects';
-	//RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnDummyTarget'.default.EffectName);
-	//Template.AddShooterEffect(RemoveEffects);
+	//	Remove the target effect that protects the dummy unit from damage
+	RemoveEffects = new class'X2Effect_RemoveEffects';
+	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_DummyTargetUnit'.default.EffectName);
+	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnAOEIndicator'.default.EffectName);	//Remove that AOE effect too
+	Template.AddShooterEffect(RemoveEffects);
 
 	DelayEffect_StrafingRun = new class 'X2Effect_IRI_DelayedAbilityActivation';
 	DelayEffect_StrafingRun.BuildPersistentEffect(default.StrafingRun_A10_Delay_Turns, false, false, false, eGameRule_PlayerTurnBegin);
@@ -247,8 +249,6 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage1_Se
 	DelayEffect_StrafingRun.TriggerEventName = default.StrafingRun_A10_Stage2_FinalTriggerName;
 	DelayEffect_StrafingRun.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, , Template.AbilitySourceName);
 	Template.AddShooterEffect(DelayEffect_StrafingRun);
-
-	//	Apply another effect here that will remove or kill or hide or teleport the unit immediately once this ability is activated.
 
 	Template.bShowActivation = false;
 	Template.bSkipFireAction = true;
@@ -294,7 +294,7 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage2()
 
 	StandardAim = new class'X2AbilityToHitCalc_StandardAim';
 	StandardAim.bIndirectFire = true;
-	StandardAim.bAllowCrit = false;	//	E3245 - up to you if you want this to crit or not.
+	StandardAim.bAllowCrit = false;
 	Template.AbilityToHitCalc = StandardAim;
 	
 	//	Multi Target Conditions
@@ -307,11 +307,6 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage2()
     Template.AbilityMultiTargetConditions.AddItem(UnitPropertyCondition);
 
 	Template.CinescriptCameraType = "MortarStrikeFinal";
-
-	//	DEBUG ONLY - REMOVE
-	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
-	//	--
-
 
 	DelayedEventListener = new class'X2AbilityTrigger_EventListener';
 	DelayedEventListener.ListenerData.Deferral = ELD_OnStateSubmitted;
@@ -368,7 +363,7 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_Stage2()
 		Template.AddMultiTargetEffect(DisorientedEffect);
 	}
 
-	Template.ActionFireClass = class'X2Action_MortarStrikeStageTwo';
+	Template.ActionFireClass = class'X2Action_Fire_StrafingRun_A10';
 	Template.bSkipExitCoverWhenFiring = true;
 
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
@@ -445,6 +440,9 @@ static function EventListenerReturn StrafingRun_Listener(Object EventData, Objec
 					{
 						`LOG("Strafing Run Listener: could not activate ability.",, 'IRIMORTAR');
 					}
+
+					//Remove unit from game to free up resources
+					`XEVENTMGR.TriggerEvent('UnitRemovedFromPlay', SourceUnit, SourceUnit, GameState);
 				}
 				else
 				{
@@ -460,9 +458,9 @@ static function EventListenerReturn StrafingRun_Listener(Object EventData, Objec
 // It's immune to everything, can't be hit, and has code required for removal.
 static function X2AbilityTemplate CreateDummyTarget_Initialize()
 {
-	local X2AbilityTemplate Template;
-	local X2Effect_DummyTargetUnit DummyImmunityEffect;
-	local X2Effect_VanishNoBlocking VanishEffect;
+	local X2AbilityTemplate			Template;
+	local X2Effect_DummyTargetUnit	DummyImmunityEffect;
+	local X2Effect_UnblockPathing	CivilianUnblockPathingEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'DummyTargetInitialize');
 
@@ -479,10 +477,9 @@ static function X2AbilityTemplate CreateDummyTarget_Initialize()
 	DummyImmunityEffect.BuildPersistentEffect(1, false, true, false, eGameRule_PlayerTurnEnd);
 	Template.AddShooterEffect(DummyImmunityEffect);
 
-	// Cosmetic vanish effect so the unit doesn't reveal by accident
-	VanishEffect = new class'X2Effect_VanishNoBlocking';
-	VanishEffect.BuildPersistentEffect(1, false, true, false, eGameRule_PlayerTurnEnd);
-	Template.AddTargetEffect(VanishEffect);
+	// Unblock effect
+	CivilianUnblockPathingEffect = class'X2StatusEffects'.static.CreateCivilianUnblockedStatusEffect();
+	Template.AddShooterEffect(CivilianUnblockPathingEffect);
 
 	Template.bSkipFireAction = true;
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;

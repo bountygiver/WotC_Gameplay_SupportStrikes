@@ -1,12 +1,10 @@
 //-----------------------------------------------------------
 // Copy of X2Action_BlazingPinionsStage2 with some minor modifications
 //-----------------------------------------------------------
-class X2Action_MortarStrikeStageTwo extends X2Action_Fire config(GameData);
+class X2Action_Fire_StrafingRun_A10 extends X2Action_Fire config(GameData);
 
 var config array<float> ProjectileTimeDelaySecArray;
-
-var config string		ProjectileFireSound;
-var string				OverrideProjectileFireSound;
+var config string		ProjectileLoopingFireSound;
 
 var int Offset;
 
@@ -78,22 +76,6 @@ function AddProjectiles(int ProjectileIndex, int InputOffset)
 //		`SHAPEMGR.DrawSphere(ImpactLocation, vect(15,15,15), MakeLinearColor(0,0,1,1), true);
 }
 
-function PlaySoundCustom(int Index)
-{
-	local string SFXToPlay;
-
-	SFXToPlay = ProjectileFireSound;
-
-	if (OverrideProjectileFireSound != "")
-		SFXToPlay = OverrideProjectileFireSound;
-
-	//Play sound
-	SFX = `CONTENT.RequestGameArchetype(SFXToPlay);
-
-	if (SFX != none && SFX.IsA('SoundCue'))
-		PlaySound(SoundCue(SFX), true, , , AbilityContext.InputContext.TargetLocations[Index]);
-}
-
 simulated state Executing
 {
 Begin:
@@ -104,10 +86,14 @@ Begin:
 
 	Offset = `SYNC_RAND(10 , 12);
 
+	//Play sound first before the actual loop
+	SFX = `CONTENT.RequestGameArchetype(ProjectileLoopingFireSound);
+
+	if (SFX != none && SFX.IsA('SoundCue'))
+		PlaySound(SoundCue(SFX), true, , , AbilityContext.InputContext.TargetLocations[TimeDelayIndex]);
+
 	for( TimeDelayIndex = 0; TimeDelayIndex < ProjectileTimeDelaySecArray.Length; ++TimeDelayIndex )
 	{
-		PlaySoundCustom(TimeDelayIndex);
-
 		//Sleep before firing next projectile
 		Sleep(ProjectileTimeDelaySecArray[TimeDelayIndex] + GetDelayModifier());
 
