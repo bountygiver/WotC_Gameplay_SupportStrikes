@@ -20,7 +20,8 @@ var config int MortarStrike_SMK_LostSpawnIncreasePerUse;	// Increases the number
 var config int MortarStrike_SMK_AdditionalSalvo_Turns;		// Number of turns that this ability will execute after the intial delay
 var config int MortarStrike_SMK_Shells_Per_Turn;
 
-var config int MortarStrike_SMK_HitModification;
+var config int MortarStrike_SMK_HitMod;
+var config int MortarStrike_SMK_AimMod;
 
 enum eMortarEffect
 {
@@ -157,8 +158,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 				Template.AddShooterEffect(DelayEffect_MortarStrike);
 
 				//  Spawn the spinny circle doodad
-				MortarStrike_HE_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
-				Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
+				Template.AddShooterEffect(new class'X2Effect_SpawnAOEIndicator');
 
 			}
 			break;
@@ -180,6 +180,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 				//  Spawn the spinny circle doodad
 				MortarStrike_HE_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
+				MortarStrike_HE_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.P_SupportStrike_AOE_Defensive";
 				Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
 			}
 			break;
@@ -248,9 +249,6 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
 
-	//	Should not be here unless you want Mortars to stop firing if the soldier becomes disoriented or something like that.
-	//Template.AddShooterEffectExclusions();
-
 	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bigbooms"; // TODO: Change this icon
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
@@ -263,7 +261,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	DelayedEventListener.ListenerData.Deferral = ELD_OnStateSubmitted;
 	DelayedEventListener.ListenerData.EventID = default.MortarStrike_Stage2_HE_TriggerName;
 	DelayedEventListener.ListenerData.Filter = eFilter_None;	//	other filters don't work with effect-triggered event.
-	DelayedEventListener.ListenerData.EventFn = Mortar_Listener;
+	DelayedEventListener.ListenerData.EventFn = static.Mortar_Listener;
 	Template.AbilityTriggers.AddItem(DelayedEventListener);
 
 	RemoveEffects = new class'X2Effect_RemoveEffects';
@@ -320,7 +318,8 @@ static function X2Effect SmokeMortarEffect()
 	//Must be at least as long as the duration of the smoke effect on the tiles. Will get "cut short" when the tile stops smoking or the unit moves. -btopp 2015-08-05
 	Effect.BuildPersistentEffect(class'X2Effect_ApplySmokeMortarToWorld'.default.Duration + 1, false, false, false, eGameRule_PlayerTurnBegin);
 	Effect.SetDisplayInfo(ePerkBuff_Bonus, default.MortarStrike_Stage2_SMK_EffectDisplayName, default.MortarStrike_Stage2_SMK_EffectDisplayDesc, "img:///UILibrary_PerkIcons.UIPerk_grenade_smoke");
-	Effect.HitMod = default.MortarStrike_SMK_HitModification;
+	Effect.HitMod = default.MortarStrike_SMK_HitMod;
+	Effect.AimBonus = default.MortarStrike_SMK_AimMod;
 	Effect.DuplicateResponse = eDupe_Refresh;
 	return Effect;
 }
@@ -331,15 +330,11 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 	local X2AbilityTemplate						Template;
 	local X2AbilityTrigger_EventListener		DelayedEventListener;
 	local X2Effect_RemoveEffects				RemoveEffects;
-//	local X2AbilityMultiTarget_Radius			RadMultiTarget;
-	//local X2AbilityCost_ActionPoints			ActionPointCost;
 	local X2AbilityToHitCalc_StandardAim		StandardAim;
 	/* Temp Shit */
 	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
-//	local X2Condition_Visibility				VisibilityCondition;
 	local X2Condition_UnitProperty				UnitPropertyCondition;
-	local X2Effect_ApplySmokeMortarToWorld		SmokeEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.MortarStrike_Stage2_SMK_AbilityName);
 	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
@@ -388,7 +383,7 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 	DelayedEventListener.ListenerData.Deferral = ELD_OnStateSubmitted;
 	DelayedEventListener.ListenerData.EventID = default.MortarStrike_Stage2_SMK_TriggerName;
 	DelayedEventListener.ListenerData.Filter = eFilter_None;	//	other filters don't work with effect-triggered event.
-	DelayedEventListener.ListenerData.EventFn = Mortar_Listener;
+	DelayedEventListener.ListenerData.EventFn = static.Mortar_Listener;
 	Template.AbilityTriggers.AddItem(DelayedEventListener);
 
 	RemoveEffects = new class'X2Effect_RemoveEffects';
@@ -396,9 +391,8 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 	Template.AddShooterEffect(RemoveEffects);
 
 	// Damage and effects
-	SmokeEffect = new class'X2Effect_ApplySmokeMortarToWorld';
-	Template.AddMultiTargetEffect(SmokeEffect);
 
+	Template.AddMultiTargetEffect(new class'X2Effect_ApplySmokeMortarToWorld');
 	//The actual smoke effect
 	Template.AddMultiTargetEffect(SmokeMortarEffect());
 

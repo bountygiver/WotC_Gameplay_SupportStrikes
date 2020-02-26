@@ -51,6 +51,9 @@
     <Content Include="Localization\Support Strikes\Air\Strafing Run\A10\XComGame.int">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Localization\Support Strikes\Artillery\Mortar\WotC_Gameplay_SupportStrikes.int">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Localization\Support Strikes\Artillery\Mortar\XComGame.int">
       <SubType>Content</SubType>
     </Content>
