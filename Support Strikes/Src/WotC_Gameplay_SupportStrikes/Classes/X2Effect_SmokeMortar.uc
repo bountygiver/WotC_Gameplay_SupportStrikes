@@ -13,7 +13,7 @@ function RegisterForEvents(XComGameState_Effect EffectGameState)
     EffectObj = EffectGameState;
  
     //  Unit State of unit in smoke
-    UnitState = XComGameState_Unit(History.GetGameStateForObjectID(EffectGameState.ApplyEffectParameters.SourceStateObjectRef.ObjectID));
+    UnitState = XComGameState_Unit(History.GetGameStateForObjectID(EffectGameState.ApplyEffectParameters.TargetStateObjectRef.ObjectID));
  
 	if (UnitState != none)
 	{
@@ -87,7 +87,7 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 {
 	local ShotModifierInfo ShotInfo;
 
-	if (Target.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
+	if (Attacker.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
 	{
 		//Only melee is immune to smoke's aim malus
 		if (!bMelee)
@@ -96,9 +96,6 @@ function GetToHitModifiers(XComGameState_Effect EffectState, XComGameState_Unit 
 			ShotInfo.Value = AimBonus;
 			ShotInfo.Reason = FriendlyName;
 			ShotModifiers.AddItem(ShotInfo);
-
-			`LOG("Success, Changed aim bonus for attacker",, 'WotC_Gameplay_SupportStrikes');
- 
 		}
 	}
 }
@@ -121,7 +118,7 @@ static function SmokeGrenadeVisualizationTickedOrRemoved(XComGameState Visualize
 DefaultProperties
 {
 	EffectName = "SmokeMortar"
-	DuplicateResponse = eDupe_Refresh
+	DuplicateResponse = eDupe_Allow
 	EffectTickedVisualizationFn = SmokeGrenadeVisualizationTickedOrRemoved;
 	EffectRemovedVisualizationFn = SmokeGrenadeVisualizationTickedOrRemoved;
 }
