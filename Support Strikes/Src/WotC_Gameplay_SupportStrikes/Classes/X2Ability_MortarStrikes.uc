@@ -156,11 +156,11 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 				DelayEffect_MortarStrike.TriggerEventName = default.MortarStrike_Stage2_HE_TriggerName;
 				DelayEffect_MortarStrike.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, , Template.AbilitySourceName);
 				Template.AddShooterEffect(DelayEffect_MortarStrike);
-
-				//  Spawn the spinny circle doodad
-				Template.AddShooterEffect(new class'X2Effect_SpawnAOEIndicator');
-
 			}
+
+			//  Spawn the spinny circle doodad
+			Template.AddShooterEffect(new class'X2Effect_SpawnAOEIndicator');
+
 			break;
 		case (eME_Smoke):
 			Cooldown.iNumTurns = default.MortarStrike_SMK_Local_Cooldown;
@@ -178,11 +178,14 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 				DelayEffect_MortarStrike.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, , Template.AbilitySourceName);
 				Template.AddShooterEffect(DelayEffect_MortarStrike);
 
-				//  Spawn the spinny circle doodad
-				MortarStrike_HE_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
-				MortarStrike_HE_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.P_SupportStrike_AOE_Defensive";
-				Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
+
 			}
+
+			//  Spawn the spinny circle doodad
+			MortarStrike_HE_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
+			MortarStrike_HE_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.P_SupportStrike_AOE_Defensive";
+			Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
+
 			break;
 		default:
 			break;
@@ -215,7 +218,10 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	local X2Effect_Panicked						PanickedEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.MortarStrike_Stage2_HE_AbilityName);
+	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bigbooms"; // TODO: Change this icon
 	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+	Template.AbilitySourceName = 'eAbilitySource_Perk';
+	Template.Hostility = eHostility_Offensive;
 
 	//Conceal until the strike hits
 	Template.ConcealmentRule = eConceal_Never;
@@ -249,10 +255,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
 
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bigbooms"; // TODO: Change this icon
-	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
-	Template.AbilitySourceName = 'eAbilitySource_Perk';
-	Template.Hostility = eHostility_Offensive;
+
 //
 //	Template.bDontDisplayInAbilitySummary = true;
 //	

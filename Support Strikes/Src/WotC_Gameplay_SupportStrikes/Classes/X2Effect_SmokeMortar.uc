@@ -25,39 +25,65 @@ function RegisterForEvents(XComGameState_Effect EffectGameState)
 		//  CallbackData - any arbitrary object you want to pass along to EventFn. Often it is the Effect State so you can access its ApplyEffectParameters in the EventFn.
  
 		//  When this Event is triggered (somewhere inside this Effect), the game will display the Flyover of the ability that has applied this effect.
-		EventMgr.RegisterForEvent(EffectObj, 'ObjectMoved', CleanseSmokeEffectListener, ELD_Immediate,, UnitState,, EffectObj);
-		`LOG("Success, Unit State found and registered for ObjectMoved! ObjectID:" @ UnitState.ObjectID $ " Name: " $ UnitState.GetFullName() ,, 'WotC_Gameplay_SupportStrikes');
-    
+		EventMgr.RegisterForEvent(EffectObj, 'AbilityActivated', CleanseSmokeEffectListener, ELD_Immediate,, UnitState);
+		EventMgr.RegisterForEvent(EffectObj, 'UnitMoveFinished', CleanseSmokeEffectListener_MoveFinished, ELD_Immediate,, UnitState);
+
+				`LOG("SUCCESS, Unit State found and registered for AbilityActivated and UnitMoveFinished! ObjectID:" @ UnitState.ObjectID $ " Name: " $ UnitState.GetFullName() $ " of " $ UnitState.GetMyTemplate().strCharacterName ,, 'WotC_Gameplay_SupportStrikes');
     }
-    else `LOG("ERROR, Could not find UnitState!",, 'WotC_Gameplay_SupportStrikes');
+    else `LOG("ERROR, Could not find UnitState of Object ID: " $ EffectGameState.ApplyEffectParameters.TargetStateObjectRef.ObjectID $ "!",, 'WotC_Gameplay_SupportStrikes');
 }
 
-static function EventListenerReturn CleanseSmokeEffectListener(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
+static function EventListenerReturn CleanseSmokeEffectListener(Object EventData, Object EventSource, XComGameState NewGameState, Name EventID, Object CallbackData)
 {
-    local XComGameState_Unit            UnitInSmoke;
-    local XComGameState_Effect          EffectState;
-    local XComGameState                 NewGameState;
+    local XComGameStateContext_Ability  AbilityContext;
+    local XComGameState_Ability         AbilityState;
+    local XComGameState_Unit            UnitState;
+	local XComWorldData					WorldData;
+	local XComGameState_Effect          EffectState;
+	local TTile							Tile;
+	local int i;
 
-    UnitInSmoke = XComGameState_Unit(EventData);
- 
-    if (UnitInSmoke != none)
+    //    AbilityState of the ability that was just activated.
+    AbilityState = XComGameState_Ability(EventData);
+	//    Unit that activated the ability.
+    UnitState = XComGameState_Unit(EventSource);
+    AbilityContext = XComGameStateContext_Ability(NewGameState.GetContext());
+	EffectState = UnitState.GetUnitAffectedByEffectState(default.EffectName);
+
+	if (AbilityState == none || UnitState == none || AbilityContext == none || EffectState == none)
     {
-		if ( !UnitInSmoke.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name) )
-		{
-			EffectState = XComGameState_Effect(CallbackData);
-			if (EffectState != none)
-			{
-			    EffectState.RemoveEffect(NewGameState, NewGameState, true);
-
-			    `LOG("Success, removed smoke effect from Unit " $ UnitInSmoke.GetFullName(),, 'WotC_Gameplay_SupportStrikes');
- 
-			    return ELR_NoInterrupt;
-			}
-		}
+        //    Something went wrong, exit listener.
+        return ELR_NoInterrupt;
     }
+	
+	`LOG("Move ability activated by the unit:" @ UnitState.GetFullName(),, 'WotC_Gameplay_SupportStrikes');
 
-    `LOG("Error, something went wrong, could not remove the smoke effect. EventID:" @ EventID @ UnitInSmoke == none @ EffectState == none,, 'WotC_Gameplay_SupportStrikes');
- 
+	WorldData = `XWORLD;
+	
+	//	Interrupt stage, before the ability has actually gone through
+	if (AbilityContext.InterruptionStatus == eInterruptionStatus_Interrupt)
+	{
+		for (i = 0; i < AbilityContext.InputContext.MovementPaths[0].MovementTiles.Length; i++)
+		{
+			Tile = AbilityContext.InputContext.MovementPaths[0].MovementTiles[i];
+
+			if (!WorldData.TileContainsWorldEffect(Tile, class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
+			{
+				`LOG("Path takes the unit" @ UnitState.GetFullName() @ "outside Smoke on tile #: " @ i @ ", removing effect.",, 'WotC_Gameplay_SupportStrikes');
+
+				EffectState.RemoveEffect(NewGameState, NewGameState, true);
+				return ELR_NoInterrupt;
+			}
+			`LOG("Path DOES NOT take the unit" @ UnitState.GetFullName() @ "outside Smoke. NOT removing effect.",, 'WotC_Gameplay_SupportStrikes');
+		}
+	}
+	else
+	{
+		// Not in the interrupt stage, ability has been successfully activated.
+		//	Move the working code here, if necessary.
+	}
+
+	
     return ELR_NoInterrupt;
 }
 /*
@@ -78,6 +104,37 @@ function GetToHitAsTargetModifiers(XComGameState_Effect EffectState, XComGameSta
 	}
 }
 
+static function EventListenerReturn CleanseSmokeEffectListener_MoveFinished(Object EventData, Object EventSource, XComGameState NewGameState, Name EventID, Object CallbackData)
+{
+    local XComGameState_Unit            UnitInSmoke;
+    local XComGameState_Effect          EffectState;
+
+    //    Unit that finished moving.
+    UnitInSmoke = XComGameState_Unit(EventSource);
+
+    `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished:" @ UnitInSmoke.GetFullName(),, 'WotC_Gameplay_SupportStrikes');
+    
+    if (UnitInSmoke != none )
+    {
+        if ( !UnitInSmoke.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name) )
+        {    
+            `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished: unit is not in smoke",, 'WotC_Gameplay_SupportStrikes');
+
+            EffectState = UnitInSmoke.GetUnitAffectedByEffectState(default.EffectName);
+            if (EffectState != none)
+            {
+                `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished: removing smoke effect.",, 'WotC_Gameplay_SupportStrikes');
+
+                EffectState.RemoveEffect(NewGameState, NewGameState, true);
+            } 
+            else `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished: unit had no smoke effect.",, 'WotC_Gameplay_SupportStrikes');
+        } 
+        else `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished: unit is on a smoked tile.",, 'WotC_Gameplay_SupportStrikes');
+    }
+    else `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished: failed to retrieve Unit State.",, 'WotC_Gameplay_SupportStrikes');
+
+    return ELR_NoInterrupt;
+}
 /*
 
 	Effect changes the chance to hit to target
