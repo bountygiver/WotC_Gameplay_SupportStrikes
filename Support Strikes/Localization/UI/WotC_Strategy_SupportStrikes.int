@@ -1,0 +1,7 @@
+[UIAlert_SupportStrikes]
+
+strTitle_Ready_StrikeAvaliable = "Support Strike Available"
+strDesc_Ready_StrikeAvaliable = "Commander, the support team is in place and awaiting your instructions. Paint a target area and our team will do the rest.\nGood hunting, Commander."
+
+strTitle_Error_StrikeNotAvaliable = "Strike Not Available"
+strDesc_Reason_MissionSiteInvalid = "It's not possible to use the requested Support Strike in the Area of Operations as there is no clearance. The strike will be available to use in the next possible mission where there is clearance."
