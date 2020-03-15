@@ -321,7 +321,7 @@ static function X2Effect SmokeMortarEffect()
 
 	Effect = new class'X2Effect_SmokeMortar';
 	//Must be at least as long as the duration of the smoke effect on the tiles. Will get "cut short" when the tile stops smoking or the unit moves. -btopp 2015-08-05
-	Effect.BuildPersistentEffect(class'X2Effect_ApplySmokeMortarToWorld'.default.Duration + 1, false, false, true, eGameRule_PlayerTurnEnd);
+	Effect.BuildPersistentEffect(class'X2Effect_ApplySmokeMortarToWorld'.default.Duration + 1, false, false, false, eGameRule_PlayerTurnEnd);
 	Effect.SetDisplayInfo(ePerkBuff_Bonus, default.MortarStrike_Stage2_SMK_EffectDisplayName, default.MortarStrike_Stage2_SMK_EffectDisplayDesc, "img:///UILibrary_PerkIcons.UIPerk_grenade_smoke", true);
 	Effect.HitMod = default.MortarStrike_SMK_HitMod;
 	Effect.AimBonus = default.MortarStrike_SMK_AimMod;
