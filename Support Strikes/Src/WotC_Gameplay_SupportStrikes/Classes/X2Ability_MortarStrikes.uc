@@ -7,6 +7,7 @@ var config int MortarStrike_HE_Delay_Turns;				// Number of turns before the nex
 var config int MortarStrike_HE_LostSpawnIncreasePerUse;	// Increases the number of lost per usage
 var config int MortarStrike_HE_AdditionalSalvo_Turns;		// Number of turns that this ability will execute after the intial delay
 var config int MortarStrike_HE_Shells_Per_Turn;
+
 var config bool MortarStrike_HE_Panic_Enable;
 var config int MortarStrike_HE_Panic_NumOfTurns;
 
@@ -19,6 +20,8 @@ var config int MortarStrike_SMK_Delay_Turns;				// Number of turns before the ne
 var config int MortarStrike_SMK_LostSpawnIncreasePerUse;	// Increases the number of lost per usage
 var config int MortarStrike_SMK_AdditionalSalvo_Turns;		// Number of turns that this ability will execute after the intial delay
 var config int MortarStrike_SMK_Shells_Per_Turn;
+
+var config int MortarStrike_SMK_InitialCharges;
 
 var config int MortarStrike_SMK_HitMod;
 var config int MortarStrike_SMK_AimMod;
@@ -49,10 +52,7 @@ var localized string MortarStrike_Stage2_SMK_EffectDisplayDesc;
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
-	
-//	Templates.AddItem(CreateSupport_Air_Offensive_CarpetBombing());
-//	Templates.AddItem(CreateSupport_Air_Offensive_PrecisionBombing());
-//
+
 	Templates.AddItem(CreateSupport_Artillery_Offensive_MortarStrike_HE_Stage1('Ability_Support_Land_Off_MortarStrike_HE_Stage1', eME_Explosive));
 	Templates.AddItem(CreateSupport_Artillery_Offensive_MortarStrike_HE_Stage2());
 
@@ -99,6 +99,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 	//Ammo Cost
 	AmmoCost = new class'X2AbilityCost_SharedCharges';	
+    AmmoCost.NumCharges = 1;
 	Template.AbilityCosts.AddItem(AmmoCost);
 
 	//	Targeting and Triggering
@@ -138,6 +139,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	VisibilityCondition.bVisibleToAnyAlly = true;
 	VisibilityCondition.bRequireLOS = false;
 	Template.AbilityTargetConditions.AddItem(VisibilityCondition);
+
 
 	switch (EffectCase)
 	{
@@ -219,7 +221,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.MortarStrike_Stage2_HE_AbilityName);
 	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bigbooms"; // TODO: Change this icon
-	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
 	Template.Hostility = eHostility_Offensive;
 
@@ -319,12 +321,27 @@ static function X2Effect SmokeMortarEffect()
 
 	Effect = new class'X2Effect_SmokeMortar';
 	//Must be at least as long as the duration of the smoke effect on the tiles. Will get "cut short" when the tile stops smoking or the unit moves. -btopp 2015-08-05
-	Effect.BuildPersistentEffect(class'X2Effect_ApplySmokeMortarToWorld'.default.Duration + 1, false, false, false, eGameRule_PlayerTurnBegin);
-	Effect.SetDisplayInfo(ePerkBuff_Bonus, default.MortarStrike_Stage2_SMK_EffectDisplayName, default.MortarStrike_Stage2_SMK_EffectDisplayDesc, "img:///UILibrary_PerkIcons.UIPerk_grenade_smoke");
+	Effect.BuildPersistentEffect(class'X2Effect_ApplySmokeMortarToWorld'.default.Duration + 1, false, false, true, eGameRule_PlayerTurnEnd);
+	Effect.SetDisplayInfo(ePerkBuff_Bonus, default.MortarStrike_Stage2_SMK_EffectDisplayName, default.MortarStrike_Stage2_SMK_EffectDisplayDesc, "img:///UILibrary_PerkIcons.UIPerk_grenade_smoke", true);
 	Effect.HitMod = default.MortarStrike_SMK_HitMod;
 	Effect.AimBonus = default.MortarStrike_SMK_AimMod;
+	Effect.EffectTickedFn = SmokeEffectTicked;
 	Effect.DuplicateResponse = eDupe_Refresh;
 	return Effect;
+}
+
+function bool SmokeEffectTicked(X2Effect_Persistent PersistentEffect, const out EffectAppliedData ApplyEffectParameters, XComGameState_Effect kNewEffectState, XComGameState NewGameState, bool FirstApplication)
+{
+    local XComGameState_Unit SourceUnit;
+
+ 
+    SourceUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ApplyEffectParameters.TargetStateObjectRef.ObjectID));
+    if (SourceUnit != none)
+		//Obviously, remove the effect if the Source Unit is not in the proper smoked tile
+		if (!SourceUnit.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
+			return true;
+
+    return false; //  do not end the effect
 }
 
 //Smoke explosion ability
@@ -340,7 +357,10 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 	local X2Condition_UnitProperty				UnitPropertyCondition;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.MortarStrike_Stage2_SMK_AbilityName);
-	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bigbooms";
+	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+	Template.AbilitySourceName = 'eAbilitySource_Perk';
+	Template.Hostility = eHostility_Offensive;
 
 	//Conceal until the strike hits
 	Template.ConcealmentRule = eConceal_Never;
@@ -374,10 +394,7 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
 
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bigbooms";
-	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
-	Template.AbilitySourceName = 'eAbilitySource_Perk';
-	Template.Hostility = eHostility_Offensive;
+
 //
 //	Template.bDontDisplayInAbilitySummary = true;
 //	

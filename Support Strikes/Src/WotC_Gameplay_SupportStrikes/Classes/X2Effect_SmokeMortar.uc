@@ -1,6 +1,21 @@
+//
+// FILE:	X2Effect_SmokeMortar
+// AUTHOR:	E3245, Iridar
+// DESC:	Advanced Smoke Detector
+//			Removes smoke effect on soldiers contextually instead of normally just checking if the soldier is on a tile.
+//			This means that once the soldier leaves the smoke clouds, the effect is removed, down to the non-smoked tile.
+//
+
 class X2Effect_SmokeMortar extends X2Effect_SmokeGrenade;
 
 var int AimBonus;
+
+
+//=====================================================
+//
+// BEGIN EVENT LISTENERS
+//
+//=====================================================
 
 function RegisterForEvents(XComGameState_Effect EffectGameState)
 {
@@ -28,7 +43,7 @@ function RegisterForEvents(XComGameState_Effect EffectGameState)
 		EventMgr.RegisterForEvent(EffectObj, 'AbilityActivated', CleanseSmokeEffectListener, ELD_Immediate,, UnitState);
 		EventMgr.RegisterForEvent(EffectObj, 'UnitMoveFinished', CleanseSmokeEffectListener_MoveFinished, ELD_Immediate,, UnitState);
 
-				`LOG("SUCCESS, Unit State found and registered for AbilityActivated and UnitMoveFinished! ObjectID:" @ UnitState.ObjectID $ " Name: " $ UnitState.GetFullName() $ " of " $ UnitState.GetMyTemplate().strCharacterName ,, 'WotC_Gameplay_SupportStrikes');
+		`LOG("SUCCESS, Unit State found and registered for AbilityActivated and UnitMoveFinished! ObjectID:" @ UnitState.ObjectID $ " Name: " $ UnitState.GetFullName() $ " of " $ UnitState.GetMyTemplate().strCharacterName ,, 'WotC_Gameplay_SupportStrikes');
     }
     else `LOG("ERROR, Could not find UnitState of Object ID: " $ EffectGameState.ApplyEffectParameters.TargetStateObjectRef.ObjectID $ "!",, 'WotC_Gameplay_SupportStrikes');
 }
@@ -63,18 +78,21 @@ static function EventListenerReturn CleanseSmokeEffectListener(Object EventData,
 	//	Interrupt stage, before the ability has actually gone through
 	if (AbilityContext.InterruptionStatus == eInterruptionStatus_Interrupt)
 	{
-		for (i = 0; i < AbilityContext.InputContext.MovementPaths[0].MovementTiles.Length; i++)
+		if (AbilityContext.InputContext.MovementPaths.Length > 0)
 		{
-			Tile = AbilityContext.InputContext.MovementPaths[0].MovementTiles[i];
-
-			if (!WorldData.TileContainsWorldEffect(Tile, class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
+			for (i = 0; i < AbilityContext.InputContext.MovementPaths[0].MovementTiles.Length; i++)
 			{
-				`LOG("Path takes the unit" @ UnitState.GetFullName() @ "outside Smoke on tile #: " @ i @ ", removing effect.",, 'WotC_Gameplay_SupportStrikes');
+				Tile = AbilityContext.InputContext.MovementPaths[0].MovementTiles[i];
 
-				EffectState.RemoveEffect(NewGameState, NewGameState, true);
-				return ELR_NoInterrupt;
+				if (!WorldData.TileContainsWorldEffect(Tile, class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
+				{
+					`LOG("Path takes the unit" @ UnitState.GetFullName() @ "outside Smoke on tile #: " @ i @ ", removing effect.",, 'WotC_Gameplay_SupportStrikes');
+
+					EffectState.RemoveEffect(NewGameState, NewGameState, true);
+					return ELR_NoInterrupt;
+				}
+				`LOG("Path DOES NOT take the unit" @ UnitState.GetFullName() @ "outside Smoke. NOT removing effect.",, 'WotC_Gameplay_SupportStrikes');
 			}
-			`LOG("Path DOES NOT take the unit" @ UnitState.GetFullName() @ "outside Smoke. NOT removing effect.",, 'WotC_Gameplay_SupportStrikes');
 		}
 	}
 	else
@@ -86,37 +104,22 @@ static function EventListenerReturn CleanseSmokeEffectListener(Object EventData,
 	
     return ELR_NoInterrupt;
 }
-/*
 
-	Effect changes the chance to hit on itself that's given the effect
-
-*/
-function GetToHitAsTargetModifiers(XComGameState_Effect EffectState, XComGameState_Unit Attacker, XComGameState_Unit Target, XComGameState_Ability AbilityState, class<X2AbilityToHitCalc> ToHitType, bool bMelee, bool bFlanking, bool bIndirectFire, out array<ShotModifierInfo> ShotModifiers)
-{
-	local ShotModifierInfo ShotMod;
-
-	if (Target.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
-	{
-		ShotMod.ModType = eHit_Success;
-		ShotMod.Value = HitMod;
-		ShotMod.Reason = FriendlyName;
-		ShotModifiers.AddItem(ShotMod);
-	}
-}
 
 static function EventListenerReturn CleanseSmokeEffectListener_MoveFinished(Object EventData, Object EventSource, XComGameState NewGameState, Name EventID, Object CallbackData)
 {
-    local XComGameState_Unit            UnitInSmoke;
+    local XComGameState_Unit            UnitState, UnitInSmoke;
     local XComGameState_Effect          EffectState;
 
     //    Unit that finished moving.
-    UnitInSmoke = XComGameState_Unit(EventSource);
+    UnitState = XComGameState_Unit(EventSource);
 
-    `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished:" @ UnitInSmoke.GetFullName(),, 'WotC_Gameplay_SupportStrikes');
+    `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished:" @ UnitState.GetFullName(),, 'WotC_Gameplay_SupportStrikes');
     
-    if (UnitInSmoke != none )
+    if (UnitState != none )
     {
-        if ( !UnitInSmoke.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name) )
+		UnitInSmoke = XComGameState_Unit(NewGameState.GetGameStateForObjectID(UnitState.ObjectID));
+        if ( UnitInSmoke != none && !UnitInSmoke.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name) )
         {    
             `LOG("X2Effect_SmokeMortar: CleanseSmokeEffectListener_MoveFinished: unit is not in smoke",, 'WotC_Gameplay_SupportStrikes');
 
@@ -135,6 +138,32 @@ static function EventListenerReturn CleanseSmokeEffectListener_MoveFinished(Obje
 
     return ELR_NoInterrupt;
 }
+
+//=====================================================
+//
+// END EVENT LISTENERS
+//
+//=====================================================
+
+
+/*
+
+	Effect changes the chance to hit on itself that's given the effect
+
+*/
+function GetToHitAsTargetModifiers(XComGameState_Effect EffectState, XComGameState_Unit Attacker, XComGameState_Unit Target, XComGameState_Ability AbilityState, class<X2AbilityToHitCalc> ToHitType, bool bMelee, bool bFlanking, bool bIndirectFire, out array<ShotModifierInfo> ShotModifiers)
+{
+	local ShotModifierInfo ShotMod;
+
+	if (Target.IsInWorldEffectTile(class'X2Effect_ApplySmokeMortarToWorld'.default.Class.Name))
+	{
+		ShotMod.ModType = eHit_Success;
+		ShotMod.Value = HitMod;
+		ShotMod.Reason = FriendlyName;
+		ShotModifiers.AddItem(ShotMod);
+	}
+}
+
 /*
 
 	Effect changes the chance to hit to target
