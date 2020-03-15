@@ -12,6 +12,9 @@
     <Content Include="Config\Compatiblity\XComScatter.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\Strategy\XComGameData.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_CharacterStats.ini">
       <SubType>Content</SubType>
     </Content>
@@ -48,6 +51,9 @@
     <Content Include="Config\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Localization\Strategy\GTS\XComGame.int">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Localization\Support Strikes\Air\Strafing Run\A10\XComGame.int">
       <SubType>Content</SubType>
     </Content>
@@ -58,6 +64,12 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Localization\Support Strikes\Orbital\Ion Cannon\XComGame.int">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\UI\WotC_Strategy_SupportStrikes.int">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Localization\UI\XComGame.int">
       <SubType>Content</SubType>
     </Content>
     <Content Include="ReadMe.txt" />
@@ -115,13 +127,38 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnDummyTarget.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2EventListener_SupportStrikes_Tactical.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Helpers_MiscFunctions.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\UIAlert_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2EventListener_SupportStrikes_Strategy.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2StrategyElement_CovertActions_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2StrategyElement_GTSUnlocks_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\XComGameState_HeadquartersProjectStrikeDelay.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\XComGameState_SupportStrikeManager.uc">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Config" />
     <Folder Include="Config\Compatiblity" />
+    <Folder Include="Config\Strategy" />
     <Folder Include="Config\Support Strikes" />
     <Folder Include="Config\Support Strikes\Air\Strafing Run" />
     <Folder Include="Config\Support Strikes\Air\Strafing Run\A10" />
@@ -131,6 +168,9 @@
     <Folder Include="Config\Support Strikes\Orbital" />
     <Folder Include="Config\Support Strikes\Orbital\IonCannon" />
     <Folder Include="Localization" />
+    <Folder Include="Localization\UI" />
+    <Folder Include="Localization\Strategy" />
+    <Folder Include="Localization\Strategy\GTS" />
     <Folder Include="Localization\Support Strikes" />
     <Folder Include="Localization\Support Strikes\Air\Strafing Run" />
     <Folder Include="Localization\Support Strikes\Air\Strafing Run\A10" />
@@ -140,8 +180,10 @@
     <Folder Include="Localization\Support Strikes\Orbital" />
     <Folder Include="Localization\Support Strikes\Orbital\Ion Cannon" />
     <Folder Include="Src" />
+    <Folder Include="Src\WotC_Strategy_SupportStrikes" />
     <Folder Include="Src\WotC_Gameplay_SupportStrikes" />
     <Folder Include="Src\WotC_Gameplay_SupportStrikes\Classes" />
+    <Folder Include="Src\WotC_Strategy_SupportStrikes\Classes" />
   </ItemGroup>
   <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
 </Project>

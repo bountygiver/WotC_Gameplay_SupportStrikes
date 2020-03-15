@@ -1,6 +1,91 @@
-class X2DownloadableContentInfo_WotC_SupportStrikes extends X2DownloadableContentInfo;
+//---------------------------------------------------------------------------------------
+//
+// FILE:	X2DownloadableContentInfo_*
+// AUTHOR:	E3245
+// DESC:	Typical X2DownloadableContentInfo
+//
+//---------------------------------------------------------------------------------------
+class X2DownloadableContentInfo_WotC_SupportStrikes extends X2DownloadableContentInfo config (GameData);
 
 var config bool bLog;
+var config bool bChaosMode;				//For those that want to turn the game into chaos
+
+var config array<name> GTSUnlocksTemp;
+
+//Markup stuff
+static function bool AbilityTagExpandHandler(string InString, out string OutString)
+{
+	local name Type;
+
+	Type = name(InString);
+
+	switch(Type)
+	{
+	case 'MORTARSTRIKE_SMK_HITMOD':
+		OutString = string(class'X2Ability_MortarStrikes'.default.MortarStrike_SMK_HitMod);
+		return true;
+	case 'MORTARSTRIKE_SMK_AIMMOD':
+		OutString = string(class'X2Ability_MortarStrikes'.default.MortarStrike_SMK_AimMod);
+		return true;
+	}
+	return false;
+}
+
+/// <summary>
+/// Called when the player starts a new campaign while this DLC / Mod is installed
+/// </summary>
+static event InstallNewCampaign(XComGameState StartState)
+{
+	local XComGameState_SupportStrikeManager StrikeMgr;
+
+	// Add the manager class
+	StrikeMgr = XComGameState_SupportStrikeManager(StartState.CreateNewStateObject(class'XComGameState_SupportStrikeManager'));
+	`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,,'WotC_Gameplay_SupportStrikes');
+	`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.",,'WotC_Gameplay_SupportStrikes');
+}
+
+/// <summary>
+/// Called just before the player launches into a tactical a mission while this DLC / Mod is installed.
+/// </summary>
+static event OnPreMission(XComGameState NewGameState, XComGameState_MissionSite MissionState)
+{
+	local XComGameState_SupportStrikeManager SupportStrikeMgr;
+	
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+
+	if (SupportStrikeMgr != none)
+	{
+		//Check what Support Strikes are purchased before missions
+		class'XComGameState_SupportStrikeManager'.static.OnPreMission(NewGameState);
+	}
+}
+
+/// <summary>
+/// Called after the player exits the post-mission sequence while this DLC / Mod is installed.
+/// </summary>
+static event OnExitPostMissionSequence()
+{
+	local XComGameState NewGameState;
+	local XComGameState_SupportStrikeManager SupportStrikeMgr;
+	
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+
+	if (SupportStrikeMgr != none)
+	{
+		//Primary driver for removing Support Strikes post-mission
+		NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Support Strike: OnExitPostMissionSequence() Update");
+		class'XComGameState_SupportStrikeManager'.static.OnExitPostMissionSequence(NewGameState);
+
+		if (NewGameState.GetNumGameStateObjects() > 0)
+		{
+			`XCOMGAME.GameRuleset.SubmitGameState(NewGameState);
+		}
+		else
+		{
+			`XCOMHISTORY.CleanupPendingGameState(NewGameState);
+		}
+	}
+}
 
 /// <summary>
 /// This method is run if the player loads a saved game that was created prior to this DLC / Mod being installed, and allows the 
@@ -9,10 +94,230 @@ var config bool bLog;
 /// </summary>
 static event OnLoadedSavedGame()
 {
-
+	InitializeSupportStrikeManager();
+	RemoveItemsFromHQ();
 }
 
+/// <summary>
+/// This method is run when the player loads a saved game directly into Strategy while this DLC is installed
+/// </summary>
 static event OnLoadedSavedGameToStrategy()
 {
-
+	InitializeSupportStrikeManager();
+	RemoveItemsFromHQ();
 }
+
+//
+// On post templates event that allows you to make changes to templates
+// Each section is moved to their own function in X2Helpers_PostTemplateModifications.uc
+//
+static event OnPostTemplatesCreated()
+{
+	AddAcademyUnlocks();
+}
+
+
+
+//
+// Given a set of academy unlock templates, removes the templates from being shown in the game.
+//
+static function AddAcademyUnlocks()
+{
+	local X2StrategyElementTemplateManager StrategyTemplateManager;
+	local X2FacilityTemplate GTSTemplate;
+	local name				 GTSNames;
+
+	StrategyTemplateManager = class'X2StrategyElementTemplateManager'.static.GetStrategyElementTemplateManager();;
+	GTSTemplate = X2FacilityTemplate(StrategyTemplateManager.FindStrategyElementTemplate('OfficerTrainingSchool'));
+
+	if (GTSTemplate == none)
+		return;
+
+	foreach default.GTSUnlocksTemp(GTSNames)
+		GTSTemplate.SoldierUnlockTemplates.AddItem(GTSNames);
+
+	//Printout all GTS Unlocks
+//	foreach GTSTemplate.SoldierUnlockTemplates(GTSNames)
+//		`LOG("[AddAcademyUnlocks()] Unlockable In GTS: " $ GTSNames,,'WotC_Gameplay_SupportStrikes');
+}
+
+// Transition patch to slowly remove items from the game
+
+static function RemoveItemsFromHQ()
+{
+	local XComGameStateHistory					History;
+	local XComGameState							NewGameState;
+	local XComGameState_HeadquartersXCom		XComHQ;
+	local XComGameState_Item					DelItemState;
+	local name									ItemName;
+	local array<name>							ItemsToRemove;
+
+	//Fill out local array with my stuff
+	ItemsToRemove.AddItem('Support_Artillery_Defensive_MortarStrike_SMK_T1');
+	ItemsToRemove.AddItem('Support_Artillery_Offensive_MortarStrike_HE_T1');
+	ItemsToRemove.AddItem('Support_Space_Offensive_IonCannon_T1');
+
+    History = `XCOMHISTORY;
+    NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("WotC_Gameplay_SupportStrikes: Remove Items. No Refunds.");
+    XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
+    XComHQ = XComGameState_HeadquartersXCom(NewGameState.CreateStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
+    NewGameState.AddStateObject(XComHQ);
+
+	foreach ItemsToRemove(ItemName)
+	{
+		DelItemState = XComHQ.GetItemByName(ItemName);
+		if (DelItemState != none)
+		{
+			`LOG("[RemoveItemsFromHQ()] Deleting Item " $ ItemName $ " with QTY: " $ DelItemState.Quantity,,'WotC_Gameplay_SupportStrikes');
+
+			NewGameState.RemoveStateObject(DelItemState.ObjectID);
+
+			XComHQ.RemoveItemFromInventory(NewGameState, DelItemState.GetReference(), DelItemState.Quantity);	
+
+			`LOG("[RemoveItemsFromHQ()] SUCCESS, Deleted Item." ,,'WotC_Gameplay_SupportStrikes');
+		}
+	}
+
+	if (NewGameState.GetNumGameStateObjects() > 0)
+	{
+		History.AddGameStateToHistory(NewGameState);
+	}
+	else
+	{
+		History.CleanupPendingGameState(NewGameState);
+	}
+}
+
+static function InitializeSupportStrikeManager()
+{
+	local XComGameStateHistory History;
+	local XComGameState NewGameState;
+	local XComGameState_SupportStrikeManager StrikeMgr;
+
+	History = `XCOMHISTORY;
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Support Strike: Initialize Manager");
+
+	StrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager', true));
+	if (StrikeMgr == none) // Prevent duplicate Managers
+	{
+		// Add the manager class
+		StrikeMgr = XComGameState_SupportStrikeManager(NewGameState.CreateNewStateObject(class'XComGameState_SupportStrikeManager'));
+		`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,,'WotC_Gameplay_SupportStrikes');
+	}
+
+	if (NewGameState.GetNumGameStateObjects() > 0)
+	{
+		`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.",,'WotC_Gameplay_SupportStrikes');
+		History.AddGameStateToHistory(NewGameState);
+	}
+	else
+	{
+		`LOG("[InitializeSupportStrikeManager()] Support Strike Manager was already installed.",,'WotC_Gameplay_SupportStrikes');
+		History.CleanupPendingGameState(NewGameState);
+	}
+}
+
+
+/*
+static function AddItemsToHQ()
+{
+	local XComGameStateHistory					History;
+	local XComGameState							NewGameState;
+	local X2ItemTemplate						ItemTemplate;
+	local X2ItemTemplateManager					ItemManager;
+	local XComGameState_HeadquartersXCom		XComHQ;
+	local XComGameState_Item					NewItemState;
+	local name									ItemName;
+	local int									i;
+
+    History = `XCOMHISTORY;
+    NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("WotC_Gameplay_SupportStrikes: Give Items");
+    XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
+    XComHQ = XComGameState_HeadquartersXCom(NewGameState.CreateStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
+    NewGameState.AddStateObject(XComHQ);
+    ItemManager = class'X2ItemTemplateManager'.static.GetItemTemplateManager();
+
+	//If the research is already completed, create itemstates and add it to the HQ Inventory
+	if (IsResearchInHistory('AutopsyAdventTrooper'))
+	{
+		foreach default.ItemsToAdd(ItemName)
+		{
+			ItemTemplate = ItemManager.FindItemTemplate(ItemName);
+			if (XComHQ.HasItem(ItemTemplate))
+			{
+				NewItemState = ItemTemplate.CreateInstanceFromTemplate(NewGameState);
+				NewGameState.AddStateObject(NewItemState);
+				XComHQ.AddItemToHQInventory(NewItemState);	
+			}
+		}
+	}
+
+	if (NewGameState.GetNumGameStateObjects() > 0)
+	{
+		History.AddGameStateToHistory(NewGameState);
+	}
+	else
+	{
+		History.CleanupPendingGameState(NewGameState);
+	}
+}
+*/
+
+//Helper function from RealityMachina's MOCX Initiative mod
+static function bool IsResearchInHistory(name ResearchName)
+{
+	// Check if we've already injected the tech templates
+	local XComGameState_Tech	TechState;
+	
+	foreach `XCOMHISTORY.IterateByClassType(class'XComGameState_Tech', TechState)
+	{
+		if ( TechState.GetMyTemplateName() == ResearchName )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+//start Issue #112
+/// <summary>
+/// Called from XComGameState_HeadquartersXCom
+/// lets mods add their own events to the event queue when the player is at the Avenger or the Geoscape
+/// </summary>
+
+/*
+static function bool GetDLCEventInfo(out array<HQEvent> arrEvents)
+{
+	GetSupportStrikeHQEvents(arrEvents);
+	return true; //returning true will tell the game to add the events have been added to the above array
+}
+
+static function GetSupportStrikeHQEvents(out array<HQEvent> arrEvents)
+{
+	local string												AbilityNameStr, GeneModdingStr;
+	local HQEvent												kEvent;
+	local XComGameState_HeadquartersProjectGeneModOperation		GeneProject;
+	local XComGameState_Unit									UnitState;
+	local XComGameStateHistory									History;
+
+	History = `XCOMHISTORY;
+	GeneProject = GetGeneModProjectFromHQ();
+	
+	if (GeneProject != none)
+	{
+		UnitState = XComGameState_Unit(History.GetGameStateForObjectID(GeneProject.ProjectFocus.ObjectID));
+		//This should never happen, but if it does, do nothing
+		if (UnitState != none)
+		{
+			//Create HQ Event
+			AbilityNameStr = Caps(GeneProject.GetMyTemplate().GetDisplayName());
+			GeneModdingStr = Repl(default.GeneModEventLabel, "%CLASSNAME", AbilityNameStr);
+			
+			kEvent.Data = GeneModdingStr @ UnitState.GetName(eNameType_RankFull);
+			kEvent.Hours = GeneProject.GetCurrentNumHoursRemaining();
+			kEvent.ImagePath = class'UIUtilities_Image'.const.EventQueue_Science;
+			arrEvents.AddItem(kEvent);
+		}
+	}
+}
+*/
