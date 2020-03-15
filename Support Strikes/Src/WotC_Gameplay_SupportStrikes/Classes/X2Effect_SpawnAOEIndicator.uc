@@ -33,7 +33,7 @@ private function DoTargetFX(XComGameState_Effect TargetEffect, out Visualization
 		EffectAction.EffectName = default.VFXPath;
 
 		if (default.OverrideVFXPath != "")
-			EffectAction.EffectName = default.OverrideVFXPath;
+			EffectAction.EffectName = OverrideVFXPath;
 
 		EffectAction.bStopEffect = bStopEffect;
 		EffectAction.EffectLocation = TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocations[0];

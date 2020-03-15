@@ -52,7 +52,6 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 	local X2AbilityCost_SharedCharges			AmmoCost;
 	local X2Condition_MapCheck					MapCheck;
 
-
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Orbital_Off_IonCannon_Stage1');
 
 	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_platform_stability"; // TODO: Change this icon
@@ -66,6 +65,7 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 
 	//Ammo Cost
 	AmmoCost = new class'X2AbilityCost_SharedCharges';	
+    AmmoCost.NumCharges = 1;
 	Template.AbilityCosts.AddItem(AmmoCost);
 
 	//	Targeting and Triggering
