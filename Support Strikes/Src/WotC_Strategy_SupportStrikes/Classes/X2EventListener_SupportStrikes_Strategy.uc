@@ -30,14 +30,10 @@ static function CHEventListenerTemplate CreateSupportStrikeStrategyListeners()
 //
 static function EventListenerReturn OnViewStrategyPolicies(Object EventData, Object EventSource, XComGameState GameState, Name Event, Object CallbackData)
 {
-	local XComGameStateHistory				History;
-	local XComGameState_HeadquartersXCom	XComHQ;
-	local XComGameState						NewGameState;
-	local XComGameState_FacilityXCom		FacilityState;
-	local X2StrategyElementTemplateManager	TemplateMan;
-	local X2SoldierUnlockTemplate			UnlockTemplate;
-	local name								UnlockName;
-	local int								Value;
+	local XComGameStateHistory					History;
+	local XComGameState_HeadquartersXCom		XComHQ;
+	local XComGameState							NewGameState;
+	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
 
 	History = `XCOMHISTORY;
 	XComHQ = class'UIUtilities_Strategy'.static.GetXComHQ();
@@ -45,29 +41,11 @@ static function EventListenerReturn OnViewStrategyPolicies(Object EventData, Obj
 	// Create a new gamestate since something will be modified
 	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("X2EventListener_SupportStrikes.OnTacticalBeginPlay");
 
-	FacilityState = XComHQ.GetFacilityByName('OfficerTrainingSchool');
-	FacilityState = XComGameState_FacilityXCom(NewGameState.ModifyStateObject(class'XComGameState_FacilityXCom', FacilityState.ObjectID));
-	TemplateMan = class'X2StrategyElementTemplateManager'.static.GetStrategyElementTemplateManager();
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
 
-	foreach FacilityState.GetMyTemplate().SoldierUnlockTemplates(UnlockName)
-	{
-		//
-		// TODO: Better implementation
-		//
-		if	( UnlockName == 'GTSUnlock_Artillery_Off_MortartStrike_HE_T1' ||
-			   UnlockName == 'GTSUnlock_Artillery_Def_MortartStrike_SMK_T1' ||
-			   UnlockName == 'GTSUnlock_Orbital_Off_IonCannon_T1'
-			)
-		{
-			Value = XComHQ.GetGenericKeyValue(string(UnlockName));
-			if (Value != -1)
-			{
-				UnlockTemplate = X2SoldierUnlockTemplate(TemplateMan.FindStrategyElementTemplate(UnlockName));
-				UnlockTemplate.Cost.ResourceCosts[0].Quantity = Value;
-				`LOG("[OnViewStrategyPolicies()] Returning " $ string(UnlockName) $ "'s " $ UnlockTemplate.Cost.ResourceCosts[0].ItemTemplateName $ " cost back to QTY: " $ UnlockTemplate.Cost.ResourceCosts[0].Quantity,,'WotC_Gameplay_SupportStrikes');
-			}
-		}
-	}
+	//Reset costs back to original values
+	SupportStrikeMgr.CurrentMonthAbilityIntelCost = SupportStrikeMgr.ScaledSupportStrikeCosts;
 
 	// If something happened, submit gamestate
 	// Otherwise, clean up the gamestate

@@ -21,14 +21,30 @@ struct CategoryCooldown
 	var int DurationHours;
 };
 
+//Copy of this struct from X2StrategyElement_GTSUnlocks_SupportStrikes
+struct ResourceCostScale
+{
+	var name	TemplateName;
+	var StrategyCost	StrikeCost;
+	var float	Multiplier;
+	var int		Addition;
+	structdefaultproperties
+	{
+		Multiplier = 1.00f;
+		Addition  = 0;
+	}
+};
+
 // Additional Content
 var bool												bInstallChosenSupportStrikes;
 
 // Error codes that will restrict usage Support Strikes
+var bool												bValid;
 var bool												bInvalid_HeightClearance;		// Underground restriction
 var bool												bInvalid_Misc;					// Restriction for any other reason (One is supported for now)
 var bool												bInvalid_RestrictArtillery;		// Restricts any Arty-class Strikes
 var bool												bInvalid_RestrictAirSupport;	// Restricts any Airborne Strikes
+var bool												bInvalid_Unknown;
 
 // Same as SoldierUnlockTemplates but only carries support strikes
 // Must be flushed after every end of mission
@@ -41,6 +57,10 @@ var bool												bADVENTHasSupportStrike;
 var bool												bAircraftUnlocked;
 var bool												bIonCannonUnlocked;
 
+// Special bool for Heli Drop In
+var bool												bHeliDropInPreLoadUnits;
+var bool												bEnableVagueOrders;
+
 // For post mission project creation
 var bool												bIsClassArtillery;
 var bool												bIsClassAirCraftAttack;
@@ -50,8 +70,9 @@ var bool												bIsClassAirCraftBomber;
 var config array<SupportStrikeStruct>					SupportStrikeData;
 var config array<CategoryCooldown>						CategoryCooldowns;
 
-var config float										SupportCostMultiplier;
-var config int											SupportCostAddition;
+// This array is not allowed to be modified by any means!
+var const config array<ResourceCostScale>				ScaledSupportStrikeCosts;
+var array<ResourceCostScale>							CurrentMonthAbilityIntelCost;
 
 //---------------------------------------------------------------------------------------
 static function OnPreMission(XComGameState NewGameState)
@@ -71,6 +92,10 @@ static function OnPreMission(XComGameState NewGameState)
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
 
+	// If this array is empty (usually if the mod is first installed or updated), copy the array
+	if (SupportStrikeMgr.CurrentMonthAbilityIntelCost.Length == 0)
+		SupportStrikeMgr.CurrentMonthAbilityIntelCost = class'XComGameState_SupportStrikeManager'.default.ScaledSupportStrikeCosts;
+
 	foreach UnlockTemplates(UnlockTemplate)
 	{
 
@@ -82,13 +107,18 @@ static function OnPreMission(XComGameState NewGameState)
 			`LOG("[OnPreMission()] Found Template: " $ UnlockTemplate.DataName ,,'WotC_Gameplay_SupportStrikes');
 			SupportStrikeMgr.PurchasedSupportStrikes.AddItem(UnlockTemplate.DataName);
 		}
+
+		if		( UnlockTemplate.DataName == 'GTSUnlock_Air_Def_HeliDropIn_T1' )
+		{
+			`LOG("[OnPreMission()] Found Template: " $ UnlockTemplate.DataName ,,'WotC_Gameplay_SupportStrikes');
+			SupportStrikeMgr.PurchasedSupportStrikes.AddItem(UnlockTemplate.DataName);
+			SupportStrikeMgr.bHeliDropInPreLoadUnits = true;
+		}
 	}
 	
 	//If the player has not purchased any strikes, then flag it
 	if ( SupportStrikeMgr.PurchasedSupportStrikes.Length == 0 )
-	{
 		`LOG("[OnPreMission()] Player has no Strikes" ,,'WotC_Gameplay_SupportStrikes');
-	}
 }
 //---------------------------------------------------------------------------------------
 static function OnExitPostMissionSequence(XComGameState NewGameState)
@@ -122,6 +152,8 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 		}
 		else
 		{
+			SupportStrikeMgr.bValid = false;
+
 			XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
 
 			foreach SupportStrikeMgr.PurchasedSupportStrikes(UnlockName)
@@ -130,18 +162,6 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 				Index = SupportStrikeMgr.SupportStrikeData.Find('GTSTemplate', UnlockName);
 				if (Index != INDEX_NONE)
 				{
-					ModifySoldierUnlockCosts(NewGameState, XComHQ, UnlockName);
-
-					// Start a new delay project to lock GTS perks
-					StrikeDelayProject = XComGameState_HeadquartersProjectStrikeDelay(NewGameState.CreateNewStateObject(class'XComGameState_HeadquartersProjectStrikeDelay'));
-					StrikeDelayProject.StrikeName = SupportStrikeMgr.SupportStrikeData[Index].Category;
-					IndexCooldown = SupportStrikeMgr.CategoryCooldowns.Find('Category', SupportStrikeMgr.SupportStrikeData[Index].Category);
-
-					if (IndexCooldown != INDEX_NONE)
-						StrikeDelayProject.AdditionalDays = SupportStrikeMgr.CategoryCooldowns[IndexCooldown].DurationHours;
-
-					StrikeDelayProject.SetProjectFocus(XComHQ.GetReference(), NewGameState);
-					XComHQ.Projects.AddItem(StrikeDelayProject.GetReference());	
 					ItemNames.AddItem(SupportStrikeMgr.SupportStrikeData[Index].ItemToGive);
 				}
 				else
@@ -150,6 +170,9 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 
 			//Flush the purchased GTSes
 			SupportStrikeMgr.PurchasedSupportStrikes.Length = 0;
+
+			//Disable Vague Orders
+			SupportStrikeMgr.bEnableVagueOrders = false;
 
 			// Another safety check to make sure we aren't modifying states improperly
 			if (ItemNames.Length > 0)
@@ -175,33 +198,5 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 				}
 			}
 		}
-	}
-}
-//---------------------------------------------------------------------------------------
-static function ModifySoldierUnlockCosts(XComGameState NewGameState, XComGameState_HeadquartersXCom	XComHQ, name TemplateName)
-{
-	local XComGameState_FacilityXCom		FacilityState;
-	local X2StrategyElementTemplateManager	TemplateMan;
-	local X2SoldierUnlockTemplate			UnlockTemplate;
-	local int								Value;
-	local int								Idx;
-
-	FacilityState = XComHQ.GetFacilityByName('OfficerTrainingSchool');
-	FacilityState = XComGameState_FacilityXCom(NewGameState.ModifyStateObject(class'XComGameState_FacilityXCom', FacilityState.ObjectID));
-	TemplateMan = class'X2StrategyElementTemplateManager'.static.GetStrategyElementTemplateManager();
-
-	UnlockTemplate = X2SoldierUnlockTemplate(TemplateMan.FindStrategyElementTemplate(TemplateName));
-	Idx = FacilityState.GetMyTemplate().SoldierUnlockTemplates.Find(TemplateName);
-
-	if (Idx != INDEX_NONE)
-	{
-		`LOG("[ModifySoldierUnlockCosts()] Found: " $ TemplateName $ " in GTS",,'WotC_Strategy_SupportStrikes');
-		//Store the original value of the specified Support Strike
-		Value = XComHQ.GetGenericKeyValue(string(TemplateName));
-		if ( Value == -1 )
-			XComHQ.SetGenericKeyValue(string(TemplateName), UnlockTemplate.Cost.ResourceCosts[0].Quantity);
-
-		UnlockTemplate.Cost.ResourceCosts[0].Quantity = (UnlockTemplate.Cost.ResourceCosts[0].Quantity * default.SupportCostMultiplier) + default.SupportCostAddition;
-		
 	}
 }

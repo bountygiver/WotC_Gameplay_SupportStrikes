@@ -6,7 +6,12 @@ struct ResourceCost
 	var int		Cost;
 };
 
-var config array<ResourceCost> MortarStrike_HE_ResourceCost;
+var config array<ResourceCost>	MortarStrike_HE_ResourceCost;
+
+
+var config array<ResourceCost> MortarStrike_HE_ResourceCostStrategy;
+
+
 var config array<ResourceCost> MortarStrike_SMK_ResourceCost;
 var config array<ResourceCost> IonCannon_ResourceCost;
 
@@ -32,7 +37,7 @@ static function X2SoldierAbilityUnlockTemplate GTSUnlock_Artillery_Off_MortarStr
 	Template.AbilityName = '';			//This unlock is a dummy. See X2EventListener_SupportStrikes, Line 79.
 	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
 
-	Template.Requirements.SpecialRequirementsFn = MortarStrikeEXPLRequirements;
+//	Template.Requirements.SpecialRequirementsFn = MortarStrikeEXPLRequirements;
 
 	// Cost
 	ModifyResourceCost(Template, default.MortarStrike_HE_ResourceCost);
@@ -50,7 +55,7 @@ static function X2SoldierAbilityUnlockTemplate GTSUnlock_Artillery_Def_MortarStr
 	Template.AbilityName = '';			//This unlock is a dummy. See X2EventListener_SupportStrikes, Line 79.
 	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
 
-	Template.Requirements.SpecialRequirementsFn = MortarStrikeSMKRequirements;
+//	Template.Requirements.SpecialRequirementsFn = MortarStrikeSMKRequirements;
 
 	// Cost
 	ModifyResourceCost(Template, default.MortarStrike_SMK_ResourceCost);
@@ -68,7 +73,7 @@ static function X2SoldierAbilityUnlockTemplate GTSUnlock_Orbital_Off_IonCannon_T
 	Template.AbilityName = '';			//This unlock is a dummy. See X2EventListener_SupportStrikes, Line 79.
 	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
 
-	Template.Requirements.SpecialRequirementsFn = IonCannonStrikeProjectNotInProgress;
+//	Template.Requirements.SpecialRequirementsFn = IonCannonStrikeProjectNotInProgress;
 
 	// Cost
 	ModifyResourceCost(Template, default.IonCannon_ResourceCost);
@@ -88,7 +93,7 @@ static function ModifyResourceCost(out X2SoldierAbilityUnlockTemplate Template, 
 		Template.Cost.ResourceCosts.AddItem(Resources);
 	}
 }
-
+/*
 static function bool MortarStrikeEXPLRequirements()
 {
 	return !GTSUnlockPurchased('GTSUnlock_Artillery_Def_MortartStrike_SMK_T1') && !StrikeProjectInProgress('Artillery');
@@ -103,7 +108,8 @@ static function bool IonCannonStrikeProjectNotInProgress()
 {
 	return !StrikeProjectInProgress('IonCannon');
 }
-
+*/
+/*
 static function bool StrikeProjectInProgress(name StrikeName)
 {
 	local XComGameStateHistory									History;
@@ -125,7 +131,7 @@ static function bool StrikeProjectInProgress(name StrikeName)
 
 	return false;
 }
-
+*/
 
 static function bool GTSUnlockPurchased(name GTSUnlock)
 {

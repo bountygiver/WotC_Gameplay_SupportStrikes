@@ -1,3 +1,10 @@
+//---------------------------------------------------------------------------------------
+// FILE:	X2Ability_OrbitalCannon.uc
+// AUTHOR:	E3245
+// DESC:	Ability that calls an Ion Strike at a specified area 
+//			Same deal as Mortar strikes but only one appears
+//
+//---------------------------------------------------------------------------------------
 class X2Ability_OrbitalCannon extends X2Ability
 	config(GameData_SupportStrikes);
 
@@ -127,7 +134,7 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 	IonCannon_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
 	Template.AddShooterEffect(IonCannon_Stage1TargetEffect);
 
-	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+	Template.BuildNewGameStateFn = class'X2Ability_MortarStrikes'.static.TypicalSupportStrike_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 	
 	return Template;

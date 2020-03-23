@@ -15,6 +15,21 @@
     <Content Include="Config\Strategy\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\Support Strikes\Air\Drop In\Characters\XComAI.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Air\Drop In\Characters\XComGameData.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Air\Drop In\Characters\XComGameData_CharacterStats.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Air\Drop In\XComGameData_SupportStrikes.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Air\Drop In\XComGameData_WeaponData.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_CharacterStats.ini">
       <SubType>Content</SubType>
     </Content>
@@ -54,6 +69,9 @@
     <Content Include="Localization\Strategy\GTS\XComGame.int">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Localization\Support Strikes\Air\Heli Drop In\AH-6\XComGame.int">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Localization\Support Strikes\Air\Strafing Run\A10\XComGame.int">
       <SubType>Content</SubType>
     </Content>
@@ -66,6 +84,9 @@
     <Content Include="Localization\Support Strikes\Orbital\Ion Cannon\XComGame.int">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Localization\UI\WotC_Gameplay_SupportStrikes.int">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Localization\UI\WotC_Strategy_SupportStrikes.int">
       <SubType>Content</SubType>
     </Content>
@@ -76,7 +97,19 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\ApplyEffectParametersObject.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\UIPopups_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\UISL_TacticalHUD_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2AbilityCost_SharedCharges.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2AbilityTrigger_OnAbilityActivated_Swarm.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_CallReinforcements_XCom.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_MortarStrikes.uc">
@@ -88,10 +121,16 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_StrafingRun.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_VagueOrders.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Fire_IonCannon.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Fire_StrafingRun_A10.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Matinee_LittleBird.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
@@ -100,10 +139,19 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_StartStopSoundCue.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Character_DummyTarget.uc">
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2AIBT_Actions_Swarm.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Character_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_HeliDropIn.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_MapCheck.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_ResourceCost.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2DownloadableContentInfo_WotC_SupportStrikes.uc">
@@ -125,6 +173,12 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnDummyTarget.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SpawnSquad.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_VagueOrder.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2EventListener_SupportStrikes_Tactical.uc">
@@ -160,6 +214,8 @@
     <Folder Include="Config\Compatiblity" />
     <Folder Include="Config\Strategy" />
     <Folder Include="Config\Support Strikes" />
+    <Folder Include="Config\Support Strikes\Air\Drop In" />
+    <Folder Include="Config\Support Strikes\Air\Drop In\Characters" />
     <Folder Include="Config\Support Strikes\Air\Strafing Run" />
     <Folder Include="Config\Support Strikes\Air\Strafing Run\A10" />
     <Folder Include="Config\Support Strikes\Artillery" />
@@ -168,6 +224,8 @@
     <Folder Include="Config\Support Strikes\Orbital" />
     <Folder Include="Config\Support Strikes\Orbital\IonCannon" />
     <Folder Include="Localization" />
+    <Folder Include="Localization\Support Strikes\Air\Heli Drop In" />
+    <Folder Include="Localization\Support Strikes\Air\Heli Drop In\AH-6" />
     <Folder Include="Localization\UI" />
     <Folder Include="Localization\Strategy" />
     <Folder Include="Localization\Strategy\GTS" />

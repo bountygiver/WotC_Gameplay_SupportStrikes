@@ -23,27 +23,27 @@ private function DoTargetFX(XComGameState_Effect TargetEffect, out Visualization
 
 	if (VFXPath == "")
 	{
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] VFX was not found.", class'X2DownloadableContentInfo_WotC_SupportStrikes'.default.bLog,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] VFX was not found.", class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(true),'WotC_Gameplay_SupportStrikes');
 		return;
 	}
 
 	if( TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocations.Length > 0 )
 	{
 		EffectAction = X2Action_PlayEffect(class'X2Action_PlayEffect'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
-		EffectAction.EffectName = default.VFXPath;
 
 		if (default.OverrideVFXPath != "")
 			EffectAction.EffectName = OverrideVFXPath;
+		else
+			EffectAction.EffectName = default.VFXPath;
 
 		EffectAction.bStopEffect = bStopEffect;
 		EffectAction.EffectLocation = TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocations[0];
 
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] Applied Effect: " $ default.VFXPath $ " to world.", bStopEffect && class'X2DownloadableContentInfo_WotC_SupportStrikes'.default.bLog ,'WotC_Gameplay_SupportStrikes');
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] Removed Effect: " $ default.VFXPath $ " to world.", !bStopEffect && class'X2DownloadableContentInfo_WotC_SupportStrikes'.default.bLog ,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] Applied Effect: " $ default.VFXPath $ " to world.", bStopEffect && class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,false) ,'WotC_Gameplay_SupportStrikes');
 	}
 	else
 	{
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] TargetLocations is empty.",,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] TargetLocations is empty.",class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(true),'WotC_Gameplay_SupportStrikes');
 	}
 }
 

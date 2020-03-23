@@ -1,1 +1,3 @@
-This is a text file.
+[X2AbilityTemplateManager]
+; AbilityAvailabilityCodes="AA_NotEnoughResources_Intel"
+AbilityAvailabilityStrings[101]="Not Enough Intel"

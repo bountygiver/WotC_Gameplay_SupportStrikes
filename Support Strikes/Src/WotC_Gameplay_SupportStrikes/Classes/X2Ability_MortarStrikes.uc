@@ -1,10 +1,18 @@
+//---------------------------------------------------------------------------------------
+// FILE:	X2Ability_MortarStrikes.uc
+// AUTHOR:	E3245 & Iridar
+// DESC:	Ability that calls and drops mortars at a specified area. 
+//			The Mortars use a Event Listener to delay the strike while storing an AEP 
+//			object to get the location of the strike when triggered
+//
+//---------------------------------------------------------------------------------------
 class X2Ability_MortarStrikes extends X2Ability
 	config(GameData_SupportStrikes);
 
 var config int MortarStrike_HE_Local_Cooldown;				//
-var config int MortarStrike_HE_Global_Cooldown;			//
-var config int MortarStrike_HE_Delay_Turns;				// Number of turns before the next ability will fire
-var config int MortarStrike_HE_LostSpawnIncreasePerUse;	// Increases the number of lost per usage
+var config int MortarStrike_HE_Global_Cooldown;				//
+var config int MortarStrike_HE_Delay_Turns;					// Number of turns before the next ability will fire
+var config int MortarStrike_HE_LostSpawnIncreasePerUse;		// Increases the number of lost per usage
 var config int MortarStrike_HE_AdditionalSalvo_Turns;		// Number of turns that this ability will execute after the intial delay
 var config int MortarStrike_HE_Shells_Per_Turn;
 
@@ -81,6 +89,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	local X2Effect_SpawnAOEIndicator			MortarStrike_HE_Stage1TargetEffect;
 	local X2AbilityCost_SharedCharges			AmmoCost;
 	local X2Condition_MapCheck					MapCheck;
+	local X2Condition_ResourceCost				IntelCostCheck;
 
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, TemplateName);
@@ -133,6 +142,9 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	MapCheck = new class'X2Condition_MapCheck';
 	Template.AbilityShooterConditions.AddItem(MapCheck);
 
+	IntelCostCheck = new class'X2Condition_ResourceCost';
+	Template.AbilityShooterConditions.AddItem(IntelCostCheck);
+
 	/* END Shooter Conditions */
 
 	VisibilityCondition = new class'X2Condition_Visibility';
@@ -140,10 +152,15 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	VisibilityCondition.bRequireLOS = false;
 	Template.AbilityTargetConditions.AddItem(VisibilityCondition);
 
+	MortarStrike_HE_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
 
 	switch (EffectCase)
 	{
 		case (eME_Explosive):
+			//  Spawn the spinny circle doodad
+			MortarStrike_HE_Stage1TargetEffect.BuildPersistentEffect(default.MortarStrike_SMK_Delay_Turns + (default.MortarStrike_SMK_AdditionalSalvo_Turns + 1), false, false, false, eGameRule_PlayerTurnBegin);
+			Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
+
 			Cooldown.iNumTurns = default.MortarStrike_HE_Local_Cooldown;
 			Cooldown.NumGlobalTurns = default.MortarStrike_HE_Global_Cooldown;
 
@@ -159,12 +176,13 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 				DelayEffect_MortarStrike.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, , Template.AbilitySourceName);
 				Template.AddShooterEffect(DelayEffect_MortarStrike);
 			}
-
-			//  Spawn the spinny circle doodad
-			Template.AddShooterEffect(new class'X2Effect_SpawnAOEIndicator');
-
 			break;
 		case (eME_Smoke):
+			//  Spawn the spinny circle doodad
+			MortarStrike_HE_Stage1TargetEffect.BuildPersistentEffect(default.MortarStrike_SMK_Delay_Turns + (default.MortarStrike_SMK_AdditionalSalvo_Turns + 1), false, false, false, eGameRule_PlayerTurnBegin);
+			MortarStrike_HE_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.P_SupportStrike_AOE_Defensive";
+			Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
+
 			Cooldown.iNumTurns = default.MortarStrike_SMK_Local_Cooldown;
 			Cooldown.NumGlobalTurns = default.MortarStrike_SMK_Global_Cooldown;
 
@@ -182,12 +200,6 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 
 			}
-
-			//  Spawn the spinny circle doodad
-			MortarStrike_HE_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
-			MortarStrike_HE_Stage1TargetEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.P_SupportStrike_AOE_Defensive";
-			Template.AddShooterEffect(MortarStrike_HE_Stage1TargetEffect);
-
 			break;
 		default:
 			break;
@@ -195,10 +207,64 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 
 	Template.AbilityCooldown = Cooldown;
 
-	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 	
 	return Template;
+}
+
+//
+// Modify the Support Strike Gamestate so we can enable Vague Orders on XCom's side
+// 
+simulated function XComGameState TypicalSupportStrike_BuildGameState( XComGameStateContext Context )
+{
+	local XComGameStateHistory					History;
+	local XComGameState_HeadquartersXCom		XComHQ;
+	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
+	local XComGameState							NewGameState;
+	local XComGameState_Unit					UnitState;
+	local XComGameState_AIGroup					GroupState;
+	local StateObjectReference					UnitRef;
+	local UnitValue								SightUnitValue;
+	local int									Idx;
+	local XComGameStateContext_Ability			AbilityContext;
+	local XComGameState_Ability					AbilityState;
+
+	History = `XCOMHISTORY;
+	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
+
+	//Do all the normal effect processing
+	NewGameState = TypicalAbility_BuildGameState(Context);
+
+	// Stop here if we're in tactical since the next part requires the player be in a campaign
+	if (class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true))
+		return NewGameState;
+
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+
+	if (SupportStrikeMgr == none) // We're in a place that Support Strikes doesn't exist, exit the function
+		return NewGameState;
+
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
+
+	AbilityContext = XComGameStateContext_Ability(Context);
+	AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(AbilityContext.InputContext.AbilityRef.ObjectID));
+
+	XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
+	XComHQ.PayStrategyCost(NewGameState, SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].StrikeCost, XComHQ.OTSUnlockScalars, XComHQ.GTSPercentDiscount);
+
+	// Find the cost again and modify it
+	Idx = SupportStrikeMgr.CurrentMonthAbilityIntelCost.Find('TemplateName', AbilityState.GetMyTemplateName());
+	if (Idx != INDEX_NONE)
+	{
+		SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].StrikeCost.ResourceCosts[0].Quantity = 
+			(	SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].StrikeCost.ResourceCosts[0].Quantity *
+				SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].Multiplier ) +
+				SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].Addition;
+	}
+
+	//Return the game state we have created
+	return NewGameState;
 }
 
 //The actual ability
@@ -269,9 +335,9 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	DelayedEventListener.ListenerData.EventFn = static.Mortar_Listener;
 	Template.AbilityTriggers.AddItem(DelayedEventListener);
 
-	RemoveEffects = new class'X2Effect_RemoveEffects';
-	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
-	Template.AddShooterEffect(RemoveEffects);
+//	RemoveEffects = new class'X2Effect_RemoveEffects';
+//	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
+//	Template.AddShooterEffect(RemoveEffects);
 
 	// Damage and effects
 	// The MultiTarget Units are dealt this damage
@@ -306,11 +372,13 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	Template.ActionFireClass = class'X2Action_MortarStrikeStageTwo';
 	Template.bSkipExitCoverWhenFiring = true;
 
-	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
+	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
 	Template.BuildVisualizationFn = Mortar_Stage2_BuildVisualization;
 
 	Template.LostSpawnIncreasePerUse = default.MortarStrike_HE_LostSpawnIncreasePerUse;
 	Template.bFrameEvenWhenUnitIsHidden = true;
+
+	Template.AssociatedPlayTiming = SPT_BeforeParallel;
 
 	return Template;
 }
@@ -406,9 +474,9 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 	DelayedEventListener.ListenerData.EventFn = static.Mortar_Listener;
 	Template.AbilityTriggers.AddItem(DelayedEventListener);
 
-	RemoveEffects = new class'X2Effect_RemoveEffects';
-	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
-	Template.AddShooterEffect(RemoveEffects);
+//	RemoveEffects = new class'X2Effect_RemoveEffects';
+//	RemoveEffects.EffectNamesToRemove.AddItem(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
+//	Template.AddShooterEffect(RemoveEffects);
 
 	// Damage and effects
 
@@ -425,6 +493,8 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 	Template.LostSpawnIncreasePerUse = default.MortarStrike_SMK_LostSpawnIncreasePerUse;
 	Template.bFrameEvenWhenUnitIsHidden = true;
 
+	Template.AssociatedPlayTiming = SPT_BeforeParallel;
+
 	return Template;
 }
 
@@ -434,33 +504,46 @@ static function Mortar_Stage2_BuildVisualization(XComGameState VisualizeGameStat
 	local VisualizationActionMetadata		ActionMetadata;
 	local XComGameStateHistory				History;
 	local XComGameStateContext_Ability		Context;
-	local int								SourceUnitID;
+	local XComGameState_Unit				UnitState;
+	local XComGameState_Effect				AOEEffectState;
 	local X2Action							FoundAction;
 	local X2Action_CameraLookAt				LookAtTargetAction;
-
-	//Iridar: Call the typical ability visuailzation. With just that, the ability would look like the soldier firing the rocket upwards, and then enemy getting damage for seemingly no reason.
-	class'X2Ability'.static.TypicalAbility_BuildVisualization(VisualizeGameState);
+	local X2Action_TimedWait				WaitAction;
+	local X2Effect_SpawnAOEIndicator		AOEEffect;
 
 	VisMgr = `XCOMVISUALIZATIONMGR;
 	History = `XCOMHISTORY;
 
-	Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
-	SourceUnitID = Context.InputContext.SourceObject.ObjectID;
+	Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());	
 
-	ActionMetadata.StateObject_OldState = History.GetGameStateForObjectID(SourceUnitID, eReturnType_Reference, VisualizeGameState.HistoryIndex - 1);
-	ActionMetadata.StateObject_NewState = VisualizeGameState.GetGameStateForObjectID(SourceUnitID);
+	ActionMetadata.StateObjectRef = Context.InputContext.SourceObject;
+	ActionMetadata.VisualizeActor = History.GetVisualizer(ActionMetadata.StateObjectRef.ObjectID);
+	History.GetCurrentAndPreviousGameStatesForObjectID(ActionMetadata.StateObjectRef.ObjectID,
+													   ActionMetadata.StateObject_OldState, ActionMetadata.StateObject_NewState,
+													   eReturnType_Reference,
+													   VisualizeGameState.HistoryIndex);	
 
-	//Iridar: Find the Fire Action in vis tree configured by Typical Ability Build Viz
-	FoundAction = VisMgr.GetNodeOfType(VisMgr.BuildVisTree, class'X2Action_Fire');
+	UnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState);
+	AOEEffectState = UnitState.GetUnitAffectedByEffectState(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
 
-    if (FoundAction != none)
-    {
-        //    Add a camera action as a child to the Fire Action's parent, that lets both Fire Action and Camera Action run in parallel
-        //    pan camera towards the shooter for the firing animation
-        LookAtTargetAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(ActionMetadata, Context, false, FoundAction.ParentActions[0]));
-		LookAtTargetAction.LookAtLocation = Context.InputContext.TargetLocations[0];
-		LookAtTargetAction.LookAtDuration = 2.00f;
+	if( AOEEffectState == none )
+	{
+		`LOG("[Mortar_Stage2_BuildVisualization] No AOE Effect Exists!",, 'WotC_Gameplay_SupportStrikes');
 	}
+
+    //    Add a camera action as a child to the Fire Action's parent, that lets both Fire Action and Camera Action run in parallel
+    //    pan camera towards the shooter for the firing animation
+	// This "should" be on a independent leaf since we want the action to continue
+    LookAtTargetAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(ActionMetadata, Context));
+	LookAtTargetAction.LookAtLocation = AOEEffectState.ApplyEffectParameters.AbilityInputContext.TargetLocations[0];
+	LookAtTargetAction.LookAtDuration = 5.00f;
+
+	// Randomly wait a few seconds before firing off a mortar
+	WaitAction = X2Action_TimedWait(class'X2Action_TimedWait'.static.AddToVisualizationTree(ActionMetadata, Context));
+	WaitAction.DelayTimeSec = `SYNC_FRAND_STATIC(20) + (`SYNC_FRAND_STATIC(3) + 1.0f);	//Use Float Random to have more variety
+
+	//Iridar: Call the typical ability visuailzation. With just that, the ability would look like the soldier firing the rocket upwards, and then enemy getting damage for seemingly no reason.
+	TypicalAbility_BuildVisualization(VisualizeGameState);
 }
 
 static function EventListenerReturn Mortar_Listener(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)

@@ -2,15 +2,34 @@
 //
 // FILE:	X2DownloadableContentInfo_*
 // AUTHOR:	E3245
-// DESC:	Typical X2DownloadableContentInfo
+// DESC:	Typical X2DownloadableContentInfo that does a wide variety of functions
 //
 //---------------------------------------------------------------------------------------
 class X2DownloadableContentInfo_WotC_SupportStrikes extends X2DownloadableContentInfo config (GameData);
 
-var config bool bLog;
+var config bool bLogAll;
+var config bool bLogErrors;
+var config bool bLogInform;
 var config bool bChaosMode;				//For those that want to turn the game into chaos
 
 var config array<name> GTSUnlocksTemp;
+
+var config array<string> CinematicMaps;
+
+var config		array<name>		arrAACodes;
+var localized	array<string>	arrAAStrings;
+
+//Simple logging function
+static function bool Log(optional bool bIsErrorMsg=false, optional bool bIsInformMsg=false)
+{
+	if (!default.bLogAll)
+		if (bIsErrorMsg && !default.bLogErrors)
+			return false;
+		if (bIsInformMsg && !default.bLogInform)
+			return false;
+
+	return true;
+}
 
 //Markup stuff
 static function bool AbilityTagExpandHandler(string InString, out string OutString)
@@ -40,8 +59,8 @@ static event InstallNewCampaign(XComGameState StartState)
 
 	// Add the manager class
 	StrikeMgr = XComGameState_SupportStrikeManager(StartState.CreateNewStateObject(class'XComGameState_SupportStrikeManager'));
-	`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,,'WotC_Gameplay_SupportStrikes');
-	`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.",,'WotC_Gameplay_SupportStrikes');
+	`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID, Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.", Log(,true),'WotC_Gameplay_SupportStrikes');
 }
 
 /// <summary>
@@ -51,6 +70,7 @@ static event OnPreMission(XComGameState NewGameState, XComGameState_MissionSite 
 {
 	local XComGameState_SupportStrikeManager SupportStrikeMgr;
 	
+
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
 
 	if (SupportStrikeMgr != none)
@@ -114,6 +134,40 @@ static event OnLoadedSavedGameToStrategy()
 static event OnPostTemplatesCreated()
 {
 	AddAcademyUnlocks();
+	UpdateAbilityAvailabilityStrings();
+}
+
+// Setup Display Strings for new AbilityAvailabilityCodes (the localized strings that tell you why an ability fails a condition)
+static function UpdateAbilityAvailabilityStrings()
+{
+    local X2AbilityTemplateManager    AbilityTemplateManager;
+    local int                        i, idx;
+
+    AbilityTemplateManager = X2AbilityTemplateManager(class'Engine'.static.FindClassDefaultObject("XComGame.X2AbilityTemplateManager"));
+
+    i = AbilityTemplateManager.AbilityAvailabilityCodes.Length - AbilityTemplateManager.AbilityAvailabilityStrings.Length;
+
+    // If there are more codes than strings, insert blank strings to bring them to equal before adding our new codes
+    if (i > 0)
+    {
+        for (idx = 0; idx < i; idx++)
+        {
+            AbilityTemplateManager.AbilityAvailabilityStrings.AddItem("");
+        }
+    }
+
+    // If there are more strings than codes, cut off the excess before adding our new codes
+    if (i < 0)
+    {
+        AbilityTemplateManager.AbilityAvailabilityStrings.Length = AbilityTemplateManager.AbilityAvailabilityCodes.Length;
+    }
+
+    // Append new codes and strings to the arrays
+    for (idx = 0; idx < default.arrAACodes.Length; idx++)
+    {
+        AbilityTemplateManager.AbilityAvailabilityCodes.AddItem(default.arrAACodes[idx]);
+        AbilityTemplateManager.AbilityAvailabilityStrings.AddItem(default.arrAAStrings[idx]);
+    }
 }
 
 
@@ -168,13 +222,13 @@ static function RemoveItemsFromHQ()
 		DelItemState = XComHQ.GetItemByName(ItemName);
 		if (DelItemState != none)
 		{
-			`LOG("[RemoveItemsFromHQ()] Deleting Item " $ ItemName $ " with QTY: " $ DelItemState.Quantity,,'WotC_Gameplay_SupportStrikes');
+			`LOG("[RemoveItemsFromHQ()] Deleting Item " $ ItemName $ " with QTY: " $ DelItemState.Quantity,Log(,true),'WotC_Gameplay_SupportStrikes');
 
 			NewGameState.RemoveStateObject(DelItemState.ObjectID);
 
 			XComHQ.RemoveItemFromInventory(NewGameState, DelItemState.GetReference(), DelItemState.Quantity);	
 
-			`LOG("[RemoveItemsFromHQ()] SUCCESS, Deleted Item." ,,'WotC_Gameplay_SupportStrikes');
+			`LOG("[RemoveItemsFromHQ()] SUCCESS, Deleted Item." ,Log(,true),'WotC_Gameplay_SupportStrikes');
 		}
 	}
 
@@ -194,6 +248,10 @@ static function InitializeSupportStrikeManager()
 	local XComGameState NewGameState;
 	local XComGameState_SupportStrikeManager StrikeMgr;
 
+	// Don't attempt to install a manager in TQL/Skirmish/Ladder/Challenge Mode
+	if ( class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true) )
+		return;
+
 	History = `XCOMHISTORY;
 	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Support Strike: Initialize Manager");
 
@@ -202,17 +260,17 @@ static function InitializeSupportStrikeManager()
 	{
 		// Add the manager class
 		StrikeMgr = XComGameState_SupportStrikeManager(NewGameState.CreateNewStateObject(class'XComGameState_SupportStrikeManager'));
-		`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,,'WotC_Gameplay_SupportStrikes');
+		`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,Log(,true),'WotC_Gameplay_SupportStrikes');
 	}
 
 	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-		`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.",,'WotC_Gameplay_SupportStrikes');
+		`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.",Log(,true),'WotC_Gameplay_SupportStrikes');
 		History.AddGameStateToHistory(NewGameState);
 	}
 	else
 	{
-		`LOG("[InitializeSupportStrikeManager()] Support Strike Manager was already installed.",,'WotC_Gameplay_SupportStrikes');
+		`LOG("[InitializeSupportStrikeManager()] Support Strike Manager was already installed.",Log(,true),'WotC_Gameplay_SupportStrikes');
 		History.CleanupPendingGameState(NewGameState);
 	}
 }
