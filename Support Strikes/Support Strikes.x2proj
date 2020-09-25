@@ -66,7 +66,7 @@
     <Content Include="Config\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Localization\Strategy\GTS\XComGame.int">
+    <Content Include="Localization\Strategy\GTS\WotC_Strategy_SupportStrikes.int">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Localization\Support Strikes\Air\Heli Drop In\AH-6\XComGame.int">
@@ -103,6 +103,9 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\UISL_TacticalHUD_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2AbilityCooldown_LocalAndGlobal_All.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2AbilityCost_SharedCharges.uc">
       <SubType>Content</SubType>
     </Content>
@@ -121,6 +124,9 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_StrafingRun.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_SupportStrikes_Common.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_VagueOrders.uc">
       <SubType>Content</SubType>
     </Content>
@@ -134,6 +140,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_RemoveViewer.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_StartStopSoundCue.uc">
@@ -166,6 +175,9 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_IRI_DelayedAbilityActivation.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_IRI_PersistentSquadViewer.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SmokeMortar.uc">
       <SubType>Content</SubType>
     </Content>
@@ -184,9 +196,6 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2EventListener_SupportStrikes_Tactical.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Helpers_MiscFunctions.uc">
-      <SubType>Content</SubType>
-    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
@@ -196,16 +205,25 @@
     <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2EventListener_SupportStrikes_Strategy.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2Helpers_MiscFunctions.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2Helper_SpawnUnit.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2SupportStrikeUnlockTemplate.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2StrategyElement_CovertActions_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\X2StrategyElement_GTSUnlocks_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\XComGameState_HeadquartersProjectStrikeDelay.uc">
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\XComGameState_SupportStrikeManager.uc">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\XComGameState_SupportStrikeManager.uc">
+    <Content Include="Src\WotC_Strategy_SupportStrikes\Classes\XComGameState_SupportStrike_Tactical.uc">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>
