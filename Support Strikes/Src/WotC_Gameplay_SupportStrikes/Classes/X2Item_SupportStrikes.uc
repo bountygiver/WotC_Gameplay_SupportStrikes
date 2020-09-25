@@ -111,7 +111,7 @@ static function X2DataTemplate CreateSupport_Land_Defensive_MortarStrike_SMK_T1_
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_MortarStrike_Smoke_CV";
 
 	// Requirements
-//	Template.Requirements.SpecialRequirementsFn = No;
+	Template.Requirements.SpecialRequirementsFn = No;
 
 	return Template;
 }
@@ -147,17 +147,16 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_WPN()
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_HeliDropIn_CV";
 
 	// Requirements
-//	Template.Requirements.SpecialRequirementsFn = No;
+	Template.Requirements.SpecialRequirementsFn = No;
 
 	return Template;
 }
 
 
-/*
+
 static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN()
 {
 	local X2WeaponTemplate Template;
-	local ArtifactCost Resources;
 
 	`CREATE_X2TEMPLATE(class'X2WeaponTemplate', Template, 'Support_Air_Offensive_StrafingRun_A10_T1');
 	
@@ -182,27 +181,18 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WP
 //	Template.DamageTypeTemplateName = 'NoFireExplosion';
 
 	Template.InventorySlot = eInvSlot_Utility;
-	Template.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_Stage1_SelectLocation');
-	//Template.Abilities.AddItem('Ability_Support_Land_Off_StrafingRun_A10_Stage2');
+	Template.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_A10_Stage1');
+	Template.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_A10_Stage2');
 
 	// This all the resources; sounds, animations, models, physics, the works.
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_StrafingRun_A10_CV";
 
 	// Requirements
-	Template.Requirements.RequiredTechs.AddItem('AutopsyAdventTrooper');
-
-	Template.CanBeBuilt = true;
-	Template.PointsToComplete = 20;
-	Template.TradingPostValue = 6;
-
-	// Cost
-	Resources.ItemTemplateName = 'Supplies';
-	Resources.Quantity = 30;
-	Template.Cost.ResourceCosts.AddItem(Resources);
+	Template.Requirements.SpecialRequirementsFn = No;
 
 	return Template;
 }
-*/
+
 
 //	This item is given to Dummy Target Unit
 static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN_Strike()
@@ -237,7 +227,7 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WP
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_StrafingRun_A10_CV";
 
 	// Requirements
-//	Template.Requirements.SpecialRequirementsFn = No;
+	Template.Requirements.SpecialRequirementsFn = No;
 
 	return Template;
 }
@@ -273,7 +263,7 @@ static function X2DataTemplate CreateSupport_Space_Offensive_OrbitalStrike_IonCa
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_IonCannon_BM";
 
 	// Requirements
-//	Template.Requirements.SpecialRequirementsFn = No;
+	Template.Requirements.SpecialRequirementsFn = No;
 
 	return Template;
 }
