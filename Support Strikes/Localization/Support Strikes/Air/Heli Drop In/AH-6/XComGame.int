@@ -1,4 +1,4 @@
-[Support_Air_Defensive_HeliDropIn_T1 X2WeaponTemplate]
+[Support_Airborne_Defensive_HeliDropIn_T1 X2WeaponTemplate]
 FriendlyName="Air Support: Helicopter Drop In"
 FriendlyNamePlural="Air Support: Helicopter Drop Ins"
 BriefSummary="A radio with its frequency set to call in fire support at the designated area."
@@ -11,8 +11,8 @@ AbilityDescName="support strike"
 
 [Ability_Support_Air_Def_HeliDropIn_Stage1 X2AbilityTemplate]
 LocFriendlyName="Air Support: AH-6 Drop In"
-LocLongDescription="Requests delayed reinforcements at the designated spot. An AH-6 Little Bird will drop 4 units at the LZ after several turns."
-LocHelpText="Delayed Reinforcments at the requested sight."
+LocLongDescription="<Ability:STRIKE_INTELCOST_USAGE_DYN/>\nRequests delayed reinforcements at the designated spot. An AH-6 Little Bird will drop 4 units at the LZ after several turns."
+LocHelpText="<Ability:STRIKE_INTELCOST_USAGE_DYN/>\nDelayed Reinforcments at the requested sight."
 LocFlyOverText="Support requested: Heli Drop In"
 
 [Ability_Support_Air_Def_HeliDropIn_Stage2 X2AbilityTemplate]
