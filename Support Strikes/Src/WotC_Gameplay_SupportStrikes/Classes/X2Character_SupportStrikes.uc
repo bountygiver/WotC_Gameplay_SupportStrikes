@@ -9,6 +9,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	Templates.AddItem(Create_XComTrooperRNFTestTemplate('SoldierTrooperTest_T1', 'XComTrooperRNFLoadoutT1' , "SoldierTrooperRNF::CharacterRoot", "XComTrooperRNFScamperRoot"));
 	Templates.AddItem(Create_XComTrooperRNFTestTemplate('SoldierTrooperTest_T2', 'XComTrooperRNFLoadoutT2' , "SoldierTrooperRNF::CharacterRoot", "XComTrooperRNFScamperRoot"));
 	Templates.AddItem(Create_XComTrooperRNFTestTemplate('SoldierTrooperTest_T3', 'XComTrooperRNFLoadoutT3' , "SoldierTrooperRNF::CharacterRoot", "XComTrooperRNFScamperRoot"));
+	Templates.AddItem(Create_XComTrooperRNFTestTemplate('SoldierCineUnit', '' , "", ""));
 
 	Templates.AddItem(Create_CineUnitCustomizableTemplate());
 	return Templates;
@@ -60,7 +61,8 @@ static function X2CharacterTemplate Create_DummyTargetTemplate()
 
 	CharTemplate.bDisplayUIUnitFlag = false;
 
-	CharTemplate.bNeverSelectable = false;
+	CharTemplate.bNeverSelectable = true;
+	CharTemplate.bIsCosmetic = true;
 
 	//Leave a body at the very least for the stage 2 ability
 	CharTemplate.bDontClearRemovedFromPlay = true;
@@ -169,7 +171,9 @@ static function X2CharacterTemplate Create_XComTrooperRNFTestTemplate(name Templ
 	CharTemplate.strIntroMatineeSlotPrefix = "Char";
 	CharTemplate.strLoadingMatineeSlotPrefix = "Soldier";
 
-	CharTemplate.DefaultLoadout = LoadoutName;
+	if (LoadoutName != '')
+		CharTemplate.DefaultLoadout = LoadoutName;
+
 	CharTemplate.Abilities.AddItem('Knockout');
 	CharTemplate.Abilities.AddItem('KnockoutSelf');
 	CharTemplate.Abilities.AddItem('Panicked');
@@ -188,10 +192,13 @@ static function X2CharacterTemplate Create_XComTrooperRNFTestTemplate(name Templ
 	CharTemplate.strTargetIconImage = class'UIUtilities_Image'.const.TargetIcon_Civilian;
 	CharTemplate.CharacterGeneratorClass = class'XGCharacterGenerator';
 
-	CharTemplate.bShouldCreateDifficultyVariants = false;
+	CharTemplate.bShouldCreateDifficultyVariants = true;
 
-	CharTemplate.strBehaviorTree = strBehaviorTree;
-	CharTemplate.strScamperBT = strScamperBT;
+	if (strBehaviorTree != "")
+		CharTemplate.strBehaviorTree = strBehaviorTree;
+	
+	if (strScamperBT != "")
+		CharTemplate.strScamperBT = strScamperBT;
 
 	return CharTemplate;
 }
@@ -248,7 +255,7 @@ static function X2CharacterTemplate Create_CineUnitCustomizableTemplate(optional
 	CharTemplate.bAllowSpawnFromATT = false;
 
 	//Doesn't interact with the world outside of Matinees
-	CharTemplate.bIsCosmetic = true;
+	//CharTemplate.bIsCosmetic = true;
 
 	CharTemplate.Abilities.AddItem('Evac');
 	CharTemplate.Abilities.AddItem('HunkerDown');
