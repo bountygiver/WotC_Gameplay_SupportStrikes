@@ -6,10 +6,6 @@
 //---------------------------------------------------------------------------------------
 class X2Condition_HeliDropIn extends X2Condition config (GameData);
 
-var config array<string> DisallowedBiomes;
-var config array<string> DisallowedPlots;
-var config array<string> DisallowedParcels;
-
 event name CallMeetsCondition(XComGameState_BaseObject kTarget)
 {
 	local XComGameState_SupportStrikeManager				SupportStrikeMgr;
