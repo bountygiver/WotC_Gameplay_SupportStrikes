@@ -11,19 +11,23 @@ var const config int NumDropSlots;				//Usually (4 * 2) + 2
 // Store this here so we can make sure the source unit doesn't get added to the matinee
 var int SourceUnitID;
 
+// These refs will be set invisible after the matinee is complete
 var private array<StateObjectReference> MatineeUnitRefs;
 var private array<StateObjectReference> CleanUpUnitRefs;
 
 function Init()
 {
+	// Insert the map into streaming map array
+	`MAPS.AddStreamingMap("CIN_Vehicle_Aircraft_LittleBird", , , false).bForceNoDupe = true;
+
 	// need to find the matinee before calling super, which will init it
 	FindMatinee(MatineeCommentPrefix);
 
 	super.Init();
 
-	`LOG("[X2Action_Matinee_LittleBird.Init()] Recorded SourceUnitID: " $ SourceUnitID,, 'WotC_Gameplay_SupportStrikes');
-
 	RetrieveSourceUnit(StateChangeContext);
+
+	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Recorded SourceUnitID: " $ SourceUnitID,, 'WotC_Gameplay_SupportStrikes');
 
 	AddUnitsToMatinee(StateChangeContext);
 
@@ -44,11 +48,11 @@ private function RetrieveSourceUnit(XComGameStateContext InContext)
 private function AddUnitsToMatinee(XComGameStateContext InContext)
 {
 	local XComGameState_Unit GameStateUnit;
-	local int UnitIndex, CineUnitIndex;
-	local UnitValue PilotCheck;
+	local int UnitIndex, PilotIndex, CosmeticUnitIndex;
 
 	UnitIndex = 1;
-	CineUnitIndex = 1;
+	PilotIndex = 1;
+	CosmeticUnitIndex = 1;
 
 	foreach InContext.AssociatedState.IterateByClassType(class'XComGameState_Unit', GameStateUnit)
 	{
@@ -56,31 +60,43 @@ private function AddUnitsToMatinee(XComGameStateContext InContext)
 		if ( SourceUnitID == GameStateUnit.ObjectID )
 			continue;
 
-		GameStateUnit.GetUnitValue('IsPilot', PilotCheck);
+
+		`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] " $ GameStateUnit.GetFullName() $ ", Tag: " $ GameStateUnit.TacticalTag , , 'WotC_Gameplay_SupportStrikes');
 		
-		if ( PilotCheck.fValue > 0 ) // Is Pilot
+		if ( GameStateUnit.TacticalTag == 'SupportStrike_Pilot' ) // Is Pilot
 		{
 			// Pilots don't count towards the unit index, they have their own index
-			AddUnitToMatinee(name("Pilot_0" $ CineUnitIndex), GameStateUnit);			
-			`LOG("[X2Action_Matinee_LittleBird.AddUnitsToMatinee()] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to Pilot_0" $ CineUnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
-			CineUnitIndex++;
+			AddUnitToMatinee(name("Pilot_0" $ PilotIndex), GameStateUnit);			
+			`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to Pilot_0" $ PilotIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
+			PilotIndex++;
 
-			MatineeUnitRefs.AddItem(GameStateUnit.GetReference());
 			CleanUpUnitRefs.AddItem(GameStateUnit.GetReference());
 		}
-		else	// Not a pilot
+		else if ( GameStateUnit.TacticalTag == 'SupportStrike_Clone' ) // Is Cosmetic Unit
 		{
-			// Add units to both Fake and Real platform
-			AddUnitToMatinee(name("F_Platform_0" $ UnitIndex), GameStateUnit);
+			// Add units to the fake platform
+			AddUnitToMatinee(name("F_Platform_0" $ CosmeticUnitIndex), GameStateUnit);
+
+			`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to F_Platform_0" $ CosmeticUnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
+			CosmeticUnitIndex++;
+
+			CleanUpUnitRefs.AddItem(GameStateUnit.GetReference());
+		}
+		else
+		{
+			// Add combat units to the real platform
 			AddUnitToMatinee(name("R_Platform_0" $ UnitIndex), GameStateUnit);
-			`LOG("[X2Action_Matinee_LittleBird.AddUnitsToMatinee()] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to F_ and R_Platform_0" $ UnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
+
+			`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to R_Platform_0" $ UnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
 			UnitIndex++;
 
 			MatineeUnitRefs.AddItem(GameStateUnit.GetReference());
 		}
 	}
 
-	`LOG("[X2Action_Matinee_LittleBird.AddUnitsToMatinee()] Non-cosmetic Units in matinee: " $ (UnitIndex - 1) $ ", Cosmetic Units in matinee: " $ (CineUnitIndex - 1),, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Pilots in matinee: " $ (PilotIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Combat Units in matinee: " $ (UnitIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Cosmetic Units in matinee: " $ (CosmeticUnitIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
 
 	// Fill in blank slots if Unit Index is less that NumDropSlots
 	while( UnitIndex < NumDropSlots )
@@ -91,10 +107,10 @@ private function AddUnitsToMatinee(XComGameStateContext InContext)
 	}
 
 	// We started at 1, so we need to check if there's at least 3 indices
-	while ( CineUnitIndex < 3 )
+	while ( PilotIndex < 3 )
 	{
-		AddUnitToMatinee(name("Pilot_0" $ CineUnitIndex), none);			
-		CineUnitIndex++;
+		AddUnitToMatinee(name("Pilot_0" $ PilotIndex), none);			
+		PilotIndex++;
 	}
 
 }
@@ -119,24 +135,11 @@ private function FindMatinee(string MatineePrefix)
 	GameSeq = class'WorldInfo'.static.GetWorldInfo().GetGameSequence();
 	GameSeq.FindSeqObjectsByClass(class'SeqAct_Interp', true, FoundMatinees);
 
-//	GameSeq.FindSeqObjectsByName( DesiredMatineePrefix , true, FoundMatinees2, true, false );
-//
-//	if (FoundMatinees2.Length > 0)
-//	{
-//		`LOG("[X2Action_Matinee_LittleBird.FindMatinee()] FoundMatinees2.Length: " $ FoundMatinees2.Length);
-//		for (Index = FoundMatinees2.length; Index > 0; Index--)
-//		{
-//			Matinee = SeqAct_Interp(FoundMatinees2[Index]);
-//			`log("" $ Matinee.ObjComment,,'Matinee');
-//		}
-//	}
-
-
 	//Search in reverse order, we're guarenteed to find our custom map the quickest
 	for (Index = FoundMatinees.length - 1; Index >= 0; Index--)
 	{
 		Matinee = SeqAct_Interp(FoundMatinees[Index]);
-		`log("" $ Matinee.ObjComment,,'Matinee');
+		//`log("" $ Matinee.ObjComment,,'Matinee');
 		if( Instr(Matinee.ObjComment, DesiredMatineePrefix, , true) >= 0 )
 		{
 			`LOG("[X2Action_Matinee_LittleBird.FindMatinee()] SUCCESS, Matinee found with prefix: " $ MatineePrefix,, 'WotC_Gameplay_SupportStrikes');
@@ -166,44 +169,104 @@ simulated state Executing
 
 		`BATTLE.SetFOW(true);
 	}
+
+Begin:
+	PlayMatinee();
+
+	// just wait for the matinee to complete playback
+	while(Matinees.Length > 0) // the matinees will be cleared when they are finished
+	{
+		Sleep(0.0f);
+	}
+	
+	CompleteAction();
 }
+
+
 
 function CompleteAction()
 {
 	local XComGameState_Unit			UnitState;
-	local VisualizationActionMetadata	ActionMetadata;
 	local StateObjectReference			UnitRef;
 	local XComWorldData					WorldData;
-	local XGUnit						XGUnitToDelete;
-	local XComUnitPawn					XComUnitPawnToDelete;
+	local XGUnit						XGUnitToDelete, ShownXGUnit;
+	local XComUnitPawn					ShownUnitPawn, XComUnitPawnToDelete;
+	local TTile							CurrentTile;
+
+	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] No more matinees to play, closing action.",,'WotC_Gameplay_SupportStrikes');
 
 	super.CompleteAction();
+	EndMatinee();
+	XComTacticalController(GetALocalPlayerController()).SetCinematicMode(false, true, true, true, true, true);
 
-	WorldData = `XWORLD;
-
-	// If the game crashes it's because of this
-	`LOG("[X2Action_Matinee_LittleBird.CompleteAction()] Cleaning up and deleting Cinematic Units.",, 'WotC_Gameplay_SupportStrikes');
-
-	//Delete the pilots from the game, they don't serve any purpose
-	foreach CleanUpUnitRefs(UnitRef)
+	// Intialize the animations for these units, the player or AI will want to use them immediately after the sequence
+	foreach MatineeUnitRefs(UnitRef)
 	{
 		UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(UnitRef.ObjectID));
+
+		// This shouldn't happen but just in case
 		if (UnitState == none)
 			continue;
 
-		WorldData.UnregisterActor(ActionMetadata.VisualizeActor);
-		`XCOMHISTORY.SetVisualizer(UnitState.ObjectID, none); //Let the history know that we are destroying this visualizer
+		// Get our variables ready
+		ShownXGUnit = XGUnit(UnitState.GetVisualizer());
+		ShownUnitPawn = ShownXGUnit.GetPawn();
 
-		XGUnitToDelete = XGUnit(ActionMetadata.VisualizeActor);
+		// Unhide the unit
+		ShownXGUnit.m_bForceHidden = false;
+
+		// If the unit wasn't frozen before (DLC_2) then unfreeze the unit
+ 		if( !UnitState.IsFrozen() )
+ 		{
+			ShownUnitPawn.GetAnimTreeController().SetAllowNewAnimations(true);
+		}
+
+		//Restore animations 
+		ShownUnitPawn.RestoreAnimSetsToDefault();
+		ShownUnitPawn.UpdateAnimations();
+
+		// Trigger the idle animation
+		ShownXGUnit.IdleStateMachine.PlayIdleAnim();
+		
+		CurrentTile = `XWORLD.GetTileCoordinatesFromPosition(Unit.Location);
+		`TACTICALRULES.VisibilityMgr.ActorVisibilityMgr.VisualizerUpdateVisibility(ShownXGUnit, CurrentTile);
+	}
+
+
+	WorldData = `XWORLD;
+
+	`LOG("[X2Action_Matinee_LittleBird.CompleteAction()] Cleaning up and deleting Cinematic Units.",, 'WotC_Gameplay_SupportStrikes');
+
+	//Delete the pilots and cosmetic units from the game, they don't serve any purpose
+	foreach CleanUpUnitRefs(UnitRef)
+	{
+		UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(UnitRef.ObjectID));
+		
+		// This shouldn't happen but just in case
+		if (UnitState == none)
+			continue;
+
+		// Remove the unit from play
+		UnitState.RemoveUnitFromPlay();
+
+		// Just in case the unit actually blocks the tile
+		WorldData.ClearTileBlockedByUnitFlag(UnitState);
+
+		//Stay hidden even after Matinee finishes playing
+		XGUnitToDelete = XGUnit(UnitState.GetVisualizer());
+		XGUnitToDelete.m_bForceHidden = true;
+
+		//Prepare the unit for deletion
+		WorldData.UnregisterActor(XGUnitToDelete);
 		XComUnitPawnToDelete = XGUnitToDelete.GetPawn();
 
 		//Destroy Unit Pawn
 		XComUnitPawnToDelete.Destroy();
 
 		//Destroy XGUnit
-		XGUnitToDelete.Destroy();	
+		XGUnitToDelete.Destroy();
 
-		`LOG("[X2Action_Matinee_LittleBird.CompleteAction()] Success, Deleted cinematic actor from tactical.",, 'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Action_Matinee_LittleBird.CompleteAction()] Success, Deleted " $ UnitState.TacticalTag $ ", " $ UnitState.GetFullName() $ " from tactical but not it's unitstate.",, 'WotC_Gameplay_SupportStrikes');
 	}
 }
 
