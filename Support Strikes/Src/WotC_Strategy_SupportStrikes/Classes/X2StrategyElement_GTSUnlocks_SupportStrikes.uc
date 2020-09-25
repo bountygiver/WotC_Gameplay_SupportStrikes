@@ -7,37 +7,36 @@ struct ResourceCost
 };
 
 var config array<ResourceCost>	MortarStrike_HE_ResourceCost;
-
-
-var config array<ResourceCost> MortarStrike_HE_ResourceCostStrategy;
-
-
 var config array<ResourceCost> MortarStrike_SMK_ResourceCost;
+var config array<ResourceCost> HeliDropIn_ResourceCost;
 var config array<ResourceCost> IonCannon_ResourceCost;
 
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
-		
+	
+	//Stationary Weapon Platforms
 	Templates.AddItem(GTSUnlock_Artillery_Off_MortarStrike_HE_T1());
 	Templates.AddItem(GTSUnlock_Artillery_Def_MortarStrike_SMK_T1());
 
+	//Air-to-Ground or General Aircraft Supports
+	Templates.AddItem(GTSUnlock_Airborne_Def_HeliDropIn_T1());
+	//Orbital Weapon Platforms
 	Templates.AddItem(GTSUnlock_Orbital_Off_IonCannon_T1());
 
 	return Templates;
 }
 
-static function X2SoldierAbilityUnlockTemplate GTSUnlock_Artillery_Off_MortarStrike_HE_T1()
+static function X2SupportStrikeUnlockTemplate GTSUnlock_Artillery_Off_MortarStrike_HE_T1()
 {
-	local X2SoldierAbilityUnlockTemplate Template;
+	local X2SupportStrikeUnlockTemplate Template;
 
-	`CREATE_X2TEMPLATE(class'X2SoldierAbilityUnlockTemplate', Template, 'GTSUnlock_Artillery_Off_MortartStrike_HE_T1');
+	`CREATE_X2TEMPLATE(class'X2SupportStrikeUnlockTemplate', Template, 'GTSUnlock_Artillery_Off_MortartStrike_HE_T1');
 
 	Template.bAllClasses = true;
-	Template.AbilityName = '';			//This unlock is a dummy. See X2EventListener_SupportStrikes, Line 79.
 	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
 
-//	Template.Requirements.SpecialRequirementsFn = MortarStrikeEXPLRequirements;
+	Template.AbilityName = 'Ability_Support_Land_Off_MortarStrike_HE_Stage1';
 
 	// Cost
 	ModifyResourceCost(Template, default.MortarStrike_HE_ResourceCost);
@@ -45,17 +44,16 @@ static function X2SoldierAbilityUnlockTemplate GTSUnlock_Artillery_Off_MortarStr
 	return Template;
 }
 
-static function X2SoldierAbilityUnlockTemplate GTSUnlock_Artillery_Def_MortarStrike_SMK_T1()
+static function X2SupportStrikeUnlockTemplate GTSUnlock_Artillery_Def_MortarStrike_SMK_T1()
 {
-	local X2SoldierAbilityUnlockTemplate Template;
+	local X2SupportStrikeUnlockTemplate Template;
 
-	`CREATE_X2TEMPLATE(class'X2SoldierAbilityUnlockTemplate', Template, 'GTSUnlock_Artillery_Def_MortartStrike_SMK_T1');
+	`CREATE_X2TEMPLATE(class'X2SupportStrikeUnlockTemplate', Template, 'GTSUnlock_Artillery_Def_MortartStrike_SMK_T1');
 
 	Template.bAllClasses = true;
-	Template.AbilityName = '';			//This unlock is a dummy. See X2EventListener_SupportStrikes, Line 79.
 	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
 
-//	Template.Requirements.SpecialRequirementsFn = MortarStrikeSMKRequirements;
+	Template.AbilityName = 'Ability_Support_Land_Def_MortarStrike_SMK_Stage1';
 
 	// Cost
 	ModifyResourceCost(Template, default.MortarStrike_SMK_ResourceCost);
@@ -63,17 +61,33 @@ static function X2SoldierAbilityUnlockTemplate GTSUnlock_Artillery_Def_MortarStr
 	return Template;
 }
 
-static function X2SoldierAbilityUnlockTemplate GTSUnlock_Orbital_Off_IonCannon_T1()
+static function X2SupportStrikeUnlockTemplate GTSUnlock_Airborne_Def_HeliDropIn_T1()
 {
-	local X2SoldierAbilityUnlockTemplate Template;
+	local X2SupportStrikeUnlockTemplate Template;
 
-	`CREATE_X2TEMPLATE(class'X2SoldierAbilityUnlockTemplate', Template, 'GTSUnlock_Orbital_Off_IonCannon_T1');
+	`CREATE_X2TEMPLATE(class'X2SupportStrikeUnlockTemplate', Template, 'GTSUnlock_Airborne_Def_HeliDropIn_T1');
 
 	Template.bAllClasses = true;
-	Template.AbilityName = '';			//This unlock is a dummy. See X2EventListener_SupportStrikes, Line 79.
 	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
 
-//	Template.Requirements.SpecialRequirementsFn = IonCannonStrikeProjectNotInProgress;
+	Template.AbilityName = 'Ability_Support_Air_Def_HeliDropIn_Stage1';
+
+	// Cost
+	ModifyResourceCost(Template, default.HeliDropIn_ResourceCost);
+	
+	return Template;
+}
+
+static function X2SupportStrikeUnlockTemplate GTSUnlock_Orbital_Off_IonCannon_T1()
+{
+	local X2SupportStrikeUnlockTemplate Template;
+
+	`CREATE_X2TEMPLATE(class'X2SupportStrikeUnlockTemplate', Template, 'GTSUnlock_Orbital_Off_IonCannon_T1');
+
+	Template.bAllClasses = true;
+	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
+
+	Template.AbilityName = 'Ability_Support_Orbital_Off_IonCannon_Stage1';
 
 	// Cost
 	ModifyResourceCost(Template, default.IonCannon_ResourceCost);
@@ -81,7 +95,7 @@ static function X2SoldierAbilityUnlockTemplate GTSUnlock_Orbital_Off_IonCannon_T
 	return Template;
 }
 
-static function ModifyResourceCost(out X2SoldierAbilityUnlockTemplate Template, array<ResourceCost> ResourceCosts)
+static function ModifyResourceCost(out X2SupportStrikeUnlockTemplate Template, array<ResourceCost> ResourceCosts)
 {
 	local ArtifactCost Resources;
 	local ResourceCost IndividualCost;
@@ -92,55 +106,4 @@ static function ModifyResourceCost(out X2SoldierAbilityUnlockTemplate Template, 
 		Resources.Quantity			= IndividualCost.Cost;
 		Template.Cost.ResourceCosts.AddItem(Resources);
 	}
-}
-/*
-static function bool MortarStrikeEXPLRequirements()
-{
-	return !GTSUnlockPurchased('GTSUnlock_Artillery_Def_MortartStrike_SMK_T1') && !StrikeProjectInProgress('Artillery');
-}
-
-static function bool MortarStrikeSMKRequirements()
-{
-	return !GTSUnlockPurchased('GTSUnlock_Artillery_Off_MortartStrike_HE_T1') && !StrikeProjectInProgress('Artillery');
-}
-
-static function bool IonCannonStrikeProjectNotInProgress()
-{
-	return !StrikeProjectInProgress('IonCannon');
-}
-*/
-/*
-static function bool StrikeProjectInProgress(name StrikeName)
-{
-	local XComGameStateHistory									History;
-	local XComGameState_HeadquartersXCom						XComHQ;
-	local XComGameState_HeadquartersProjectStrikeDelay			StrikeProject;
-	local int													iProject;
-
-	History = `XCOMHISTORY;
-	XComHQ = class'UIUtilities_Strategy'.static.GetXComHQ();
-
-	for (iProject = 0; iProject < XComHQ.Projects.Length; iProject++)
-	{
-		StrikeProject = XComGameState_HeadquartersProjectStrikeDelay(History.GetGameStateForObjectID(XComHQ.Projects[iProject].ObjectID));
-
-		if (StrikeProject != none)
-			if (StrikeProject.StrikeName == StrikeName)
-				return true;
-	}
-
-	return false;
-}
-*/
-
-static function bool GTSUnlockPurchased(name GTSUnlock)
-{
-	local XComGameState_HeadquartersXCom						XComHQ;
-
-	XComHQ = class'UIUtilities_Strategy'.static.GetXComHQ();
-
-	if ( XComHQ.HasSoldierUnlockTemplate(GTSUnlock) )
-		return true;
-
-	return false;
 }
