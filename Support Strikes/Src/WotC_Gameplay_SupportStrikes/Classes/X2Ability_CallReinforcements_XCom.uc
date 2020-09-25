@@ -4,7 +4,7 @@
 // DESC:	Ability that calls reinforcements for XCom after a delay
 //
 //---------------------------------------------------------------------------------------
-class X2Ability_CallReinforcements_XCom extends X2Ability
+class X2Ability_CallReinforcements_XCom extends X2Ability_SupportStrikes_Common
 	config(GameData_SupportStrikes);
 
 var localized string CallingReinforcementsFriendlyName;
@@ -40,7 +40,7 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stage1(
 {
 	local X2AbilityTemplate						Template;
 	local X2AbilityCost_ActionPoints			ActionPointCost;
-	local X2AbilityCooldown_LocalAndGlobal		Cooldown;
+	local X2AbilityCooldown_LocalAndGlobal_All	Cooldown;
 	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
 	local X2Effect_IRI_DelayedAbilityActivation DelayEffect_HeliDropIn;
@@ -48,7 +48,6 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stage1(
 	local X2Effect_SpawnAOEIndicator			FXEffect;
 	local X2AbilityCost_SharedCharges			AmmoCost;
 	local X2Condition_MapCheck					MapCheck;
-	local X2AbilityCharges						Charges;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Air_Def_HeliDropIn_Stage1');
 
@@ -98,7 +97,7 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stage1(
 	ActionPointCost.bConsumeAllPoints = true;
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
-	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal';
+	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal_All';
 	Cooldown.iNumTurns = default.HeliDropIn_Local_Cooldown;
 	Cooldown.NumGlobalTurns = default.HeliDropIn_Global_Cooldown;
 	Template.AbilityCooldown = Cooldown;
@@ -132,8 +131,9 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stage1(
 	FXEffect.OverrideVFXPath = "FX_Evac_Zone.P_Evac_Zone_Flare_Ring";
 	Template.AddShooterEffect(FXEffect);
 
-	Template.BuildNewGameStateFn = class'X2Ability_MortarStrikes'.static.TypicalSupportStrike_BuildGameState;
+	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+	Template.AlternateFriendlyNameFn = TypicalSupportStrike_AlternateFriendlyName;
 	
 	return Template;
 }
@@ -143,7 +143,9 @@ static function X2AbilityTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stag
 	local X2AbilityTemplate					Template;
 	local X2Effect_SpawnSquad				SpawnSoldierEffect;
 	local X2AbilityTrigger_EventListener	DelayedEventListener;
-	local X2Effect_RemoveEffects			RemoveEffects;
+	local X2AbilityMultiTarget_Radius		MultiTarget;
+//	local X2Effect_RemoveEffects			RemoveEffects;
+	local X2AbilityTarget_Cursor			CursorTarget;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.HeliDropIn_Stage2AbilityName);
 
@@ -157,8 +159,22 @@ static function X2AbilityTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stag
 
 	Template.AbilityToHitCalc = default.DeadEye;
 
+	Template.bRecordValidTiles = true;
+
+	MultiTarget = new class'X2AbilityMultiTarget_Radius';	//	this is just to show an approximation of potential drop positions
+	MultiTarget.fTargetRadius = 2.5;						//	We will need this to access a native function to gather tiles for positions
+	MultiTarget.bIgnoreBlockingCover = false; 
+	Template.AbilityMultiTargetStyle = MultiTarget;
+
+	CursorTarget = new class'X2AbilityTarget_Cursor';
+	Template.AbilityTargetStyle = CursorTarget;
+	Template.TargetingMethod = class'X2TargetingMethod_ViperSpit';
+
 	// Permanently spawn a squad in the area
 	SpawnSoldierEffect = new class'X2Effect_SpawnSquad';
+	SpawnSoldierEffect.MaxSoldiers = 4;
+	SpawnSoldierEffect.MaxPilots = 2;
+	SpawnSoldierEffect.bSpawnCosmeticSoldiers = true;
 	SpawnSoldierEffect.BuildPersistentEffect(1, false, true, false, eGameRule_PlayerTurnBegin);
 	Template.AddShooterEffect(SpawnSoldierEffect);
 
@@ -259,51 +275,11 @@ simulated function XComGameState CallReinforcements_BuildGameState( XComGameStat
 	local XComGameStateHistory					History;
 	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
 	local XComGameState							NewGameState;
-	local XComGameState_Unit					UnitState;
-	local XComGameState_AIGroup					GroupState;
-	local StateObjectReference					UnitRef;
-	local UnitValue								SightUnitValue;
-	local int									i;
 
 	History = `XCOMHISTORY;
 
 	//Do all the normal effect processing
 	NewGameState = TypicalAbility_BuildGameState(Context);
-
-	//Find our group state that we created at the beginning of tactical game
-	foreach History.IterateByClassType( class'XComGameState_AIGroup', GroupState )
-	{
-		if (GroupState.TeamName == eTeam_XCom && GroupState.EncounterID	== class'X2Effect_SpawnSquad'.default.EncounterID)
-		{
-			`LOG("[CallReinforcements_BuildGameState()] Found AIGroup with ObjectID: " $ GroupState.ObjectID,,'WotC_Gameplay_SupportStrikes');
-			break;
-		}
-
-	}
-
-	//
-	// Now apply gamestate changes to the units that were spawned in at the start
-	//
-	foreach GroupState.m_arrMembers(UnitRef)
-	{
-		UnitState = XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID));
-		UnitState = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitState.ObjectID));
-
-		`LOG("[CallReinforcements_BuildGameState()] Modifying Unit: " $ UnitState.GetFullName() $ " ObjectID: " $ UnitState.ObjectID,,'WotC_Gameplay_SupportStrikes');
-
-		UnitState.GetUnitValue('eStat_SightRadius', SightUnitValue);
-
-		if (SightUnitValue.fValue != 0)
-			UnitState.SetBaseMaxStat(eStat_SightRadius, SightUnitValue.fValue);
-
-		UnitState.ClearRemovedFromPlayFlag();
-
-		class'X2Helpers_MiscFunctions'.static.TeleportUnitState(UnitState, XComGameStateContext_Ability(Context).InputContext.TargetLocations[0], true);
-
-		//add actionpoints
-		for(i=0;i< class'X2Effect_SpawnSquad'.default.SpawnedUnit_StandardAP;i++) UnitState.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.StandardActionPoint);
-		for(i=0;i< class'X2Effect_SpawnSquad'.default.SpawnedUnit_MovementOnlyAP;i++) UnitState.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.MoveActionPoint);
-	}
 
 	// Stop here if we're in tactical since the next part requires the player be in a campaign
 	if (class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true))
@@ -338,18 +314,14 @@ simulated function CallReinforcements_BuildVisualization(XComGameState Visualize
 	local XComGameState_Unit			SourceUnitState, SpawnedUnit;
 	local UnitValue						SpawnedUnitValue;
 	local X2Effect_SpawnSquad			SpawnSoldierEffect;
-	local X2Action_TimedWait			WaitAction;
-	local X2Action_Fire					FireAction;
-	//local X2Action_EnterCover			EnterCoverAction;
 	local X2Action_CameraLookAt			LookAtAction;
-	local X2Action_WaitForAbilityEffect WaitForEffectAction;
+	local X2Action_WaitForAbilityEffect	WaitForEffectAction;
 	local X2Action_Matinee_LittleBird	MatineeAction;
 	local XComGameStateVisualizationMgr VisualizationMgr;
-	local StateObjectReference			UnitRef;
 	local int							i;
 	local array<X2Action>				LeafNodes;
 	local X2Action_UpdateFOW			FOWAction;
-
+	local Rotator						NewRot;
 
 	//`LOG("Calling Dynamic Deployment Build Viz function", bLog, 'IRIDAR');
 
@@ -357,7 +329,7 @@ simulated function CallReinforcements_BuildVisualization(XComGameState Visualize
 	VisualizationMgr = `XCOMVISUALIZATIONMGR;
 
 	Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
-//	SourceUnitRef = Context.InputContext.SourceObject;
+	SourceUnitRef = Context.InputContext.SourceObject;
 
 	//Configure the visualization tree for the ability caster
 	//****************************************************************************************
@@ -370,7 +342,7 @@ simulated function CallReinforcements_BuildVisualization(XComGameState Visualize
 	//FireAction = X2Action_Fire(class'X2Action_Fire'.static.AddToVisualizationTree(SourceUnitMetadata, Context));
 	//EnterCoverAction = X2Action_EnterCover(class'X2Action_EnterCover'.static.AddToVisualizationTree(SourceUnitMetadata, Context));
 
-	LookAtAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(SourceUnitMetadata, Context, false, FireAction));
+	LookAtAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(SourceUnitMetadata, Context));
 	LookAtAction.LookAtLocation = Context.InputContext.TargetLocations[0];
 
 	WaitForEffectAction = X2Action_WaitForAbilityEffect(class'X2Action_WaitForAbilityEffect'.static.AddToVisualizationTree(SourceUnitMetadata, Context, false, LookAtAction));
@@ -386,7 +358,7 @@ simulated function CallReinforcements_BuildVisualization(XComGameState Visualize
 	if( SpawnSoldierEffect == none )
 	{
 		`RedScreenOnce("CallReinforcements_BuildVisualization: Missing X2Effect_SpawnSquad");
-		`LOG("[CallReinforcements_BuildGameState()] Missing X2Effect_SpawnSquad!" ,,'WotC_Gameplay_SupportStrikes');
+		`LOG("["$ GetFuncName() $"] Missing X2Effect_SpawnSquad!" ,,'WotC_Gameplay_SupportStrikes');
 		return;
 	}
 
@@ -395,42 +367,26 @@ simulated function CallReinforcements_BuildVisualization(XComGameState Visualize
 	//	these unit values contain the References to the units we need to visualize spawn for
 	i = 0;
 
-//	if ( class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true) )
-//		SourceUnitState.GetUnitValue(name(class'X2Effect_SpawnSquad'.default.SpawnedUnitValueName $ i), SpawnedUnitValue);
-//	else
-//		ZerothXComUnit.GetUnitValue(name(class'X2Effect_SpawnSquad'.default.SpawnedUnitValueName $ i), SpawnedUnitValue);
-//
-//	if (SpawnedUnitValue.fValue == 0)
-//		`LOG("[CallReinforcements_BuildVisualization()] No Units to spawn!" ,,'WotC_Gameplay_SupportStrikes');
+	SourceUnitState.GetUnitValue(name(class'X2Effect_SpawnSquad'.default.SpawnedUnitValueName $ i), SpawnedUnitValue);
 
-	foreach VisualizeGameState.IterateByClassType(class'XComGameState_Unit', SpawnedUnit)
-	{
-		// Watch out, the Source Unit is in this gamestate too
-		if (SpawnedUnit.ObjectID == SourceUnitState.ObjectID)
-			continue;
+	if (SpawnedUnitValue.fValue == 0)
+		`LOG("[CallReinforcements_BuildVisualization()] No Units to spawn!" ,,'WotC_Gameplay_SupportStrikes');
 
-		SpawnedUnitMetadata = EmptyMetadata;
-		SpawnedUnitMetadata.StateObject_OldState = History.GetGameStateForObjectID(SpawnedUnit.ObjectID, eReturnType_Reference, VisualizeGameState.HistoryIndex);
-		SpawnedUnitMetadata.StateObject_NewState = SpawnedUnitMetadata.StateObject_OldState;
-		SpawnedUnit = XComGameState_Unit(SpawnedUnitMetadata.StateObject_NewState);
-		SpawnedUnitMetadata.VisualizeActor = History.GetVisualizer(SpawnedUnit.ObjectID);
-
-		SpawnSoldierEffect.AddSpawnVisualizationsToTracks(Context, SpawnedUnit, SpawnedUnitMetadata, SourceUnitState, SourceUnitMetadata);
-	}
-
-/*
-	// This area is a huge performance hit / hotspot
+	// This area is a huge performance hit / hotspot if the units' archetypes are not preloaded in some fashion
+	// Spawn all of the units that are tied to the source unit
 	while (SpawnedUnitValue.fValue != 0)
 	{
 		SpawnedUnitMetadata = EmptyMetadata;
 		SpawnedUnitMetadata.StateObject_OldState = History.GetGameStateForObjectID(SpawnedUnitValue.fValue, eReturnType_Reference, VisualizeGameState.HistoryIndex);
 		SpawnedUnitMetadata.StateObject_NewState = SpawnedUnitMetadata.StateObject_OldState;
 		SpawnedUnit = XComGameState_Unit(SpawnedUnitMetadata.StateObject_NewState);
+
+		//Initialize the visualizer for the unit first
+		SpawnSoldierEffect.AddSpawnVisualizationsToTracks(Context, SpawnedUnit, SpawnedUnitMetadata, SourceUnitState, SourceUnitMetadata);
+
+		//Assign them to the metadata
 		SpawnedUnitMetadata.VisualizeActor = History.GetVisualizer(SpawnedUnit.ObjectID);
 
-
-//		SpawnSoldierEffect.AddSpawnVisualizationsToTracks(Context, SpawnedUnit, SpawnedUnitMetadata, SourceUnitState, SourceUnitMetadata);
-		
 		//ExcludedRefs.AddItem(SpawnedUnit.GetReference());
 		//	after the unit's spawn was visualized, we zero out the Unit Value on the ability caster 
 		//	to make sure this unit will not be spawned again if the ability is reactivated in the same turn
@@ -439,24 +395,36 @@ simulated function CallReinforcements_BuildVisualization(XComGameState Visualize
 		i++;
 		SpawnedUnitValue.fValue = 0;	//	zero out the local Unit Value because if we try to get a unit value that does not exist on the target, the previous value is not overwritten by zero
 										//	basically, without this step this cycle ALWAYS goes into infinite loop
-		if ( class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true) )
-			SourceUnitState.GetUnitValue(name(class'X2Effect_SpawnSquad'.default.SpawnedUnitValueName $ i), SpawnedUnitValue);
-		else
-			ZerothXComUnit.GetUnitValue(name(class'X2Effect_SpawnSquad'.default.SpawnedUnitValueName $ i), SpawnedUnitValue);
+		SourceUnitState.GetUnitValue(name(class'X2Effect_SpawnSquad'.default.SpawnedUnitValueName $ i), SpawnedUnitValue);
 	}
-*/
-	// Sync up on the very last parent action
+	
+	`LOG("[" $ GetFuncName() $ "] Actor Index count: " $ i ,, 'WotC_Gameplay_SupportStrikes');
+
+
+	// Sync up here because we need to wait until all units have spawned in before proceeding with the Matinee
 	VisualizationMgr.GetAllLeafNodes(VisualizationMgr.BuildVisTree, LeafNodes);
 
+	//Perform Matinee
+	MatineeAction = X2Action_Matinee_LittleBird(class'X2Action_Matinee_LittleBird'.static.AddToVisualizationTree(SpawnedUnitMetadata, Context, false, none, LeafNodes));
 	// Record the caster so that it doesn't add them to the Matinee by accident
 	MatineeAction.SourceUnitID = SourceUnitState.ObjectID;
 
-	MatineeAction = X2Action_Matinee_LittleBird(class'X2Action_Matinee_LittleBird'.static.AddToVisualizationTree(SpawnedUnitMetadata, Context, false, none, LeafNodes));
-	MatineeAction.SetMatineeLocation(Context.InputContext.TargetLocations[0], Rotator(Context.InputContext.TargetLocations[0]));
+	//Recalculate Rotator. We only want the Yaw
+	NewRot = Rotator(Context.InputContext.TargetLocations[0]);
+	NewRot.Pitch = 0;
+	NewRot.Roll = 0;
+
+	MatineeAction.SetMatineeLocation(Context.InputContext.TargetLocations[0], NewRot);
 	MatineeAction.PostMatineeUnitVisibility = PostMatineeVisibility_Visible;
 
+	//Add a join so that all hit reactions and other actions will complete before the visualization sequence moves on. In the case
+	// of fire but no enter cover then we need to make sure to wait for the fire since it isn't a leaf node
+	VisualizationMgr.GetAllLeafNodes(VisualizationMgr.BuildVisTree, LeafNodes);
+
+	//Perform FOW updates, if any
 	FOWAction = X2Action_UpdateFOW( class'X2Action_UpdateFOW'.static.AddToVisualizationTree(SpawnedUnitMetadata, Context, false, SpawnedUnitMetadata.LastActionAdded));
 	FOWAction.ForceUpdate = true;
+
 }
 
 defaultproperties
