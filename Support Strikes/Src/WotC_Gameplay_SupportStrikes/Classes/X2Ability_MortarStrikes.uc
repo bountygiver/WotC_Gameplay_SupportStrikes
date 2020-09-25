@@ -6,7 +6,7 @@
 //			object to get the location of the strike when triggered
 //
 //---------------------------------------------------------------------------------------
-class X2Ability_MortarStrikes extends X2Ability
+class X2Ability_MortarStrikes extends X2Ability_SupportStrikes_Common
 	config(GameData_SupportStrikes);
 
 var config int MortarStrike_HE_Local_Cooldown;				//
@@ -55,8 +55,6 @@ var name MortarStrike_Stage2_SMK_TriggerName;
 var localized string MortarStrike_Stage2_SMK_EffectDisplayName;
 var localized string MortarStrike_Stage2_SMK_EffectDisplayDesc;
 
-
-
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
@@ -79,7 +77,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 {
 	local X2AbilityTemplate						Template;
 	local X2AbilityCost_ActionPoints			ActionPointCost;
-	local X2AbilityCooldown_LocalAndGlobal		Cooldown;
+	local X2AbilityCooldown_LocalAndGlobal_All	Cooldown;
 	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
 	local X2Effect_IRI_DelayedAbilityActivation DelayEffect_MortarStrike;
@@ -131,7 +129,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	ActionPointCost.bConsumeAllPoints = true;
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
-	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal';
+	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal_All';
 
 	/* BEGIN Shooter Conditions */
 
@@ -197,74 +195,20 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 				DelayEffect_MortarStrike.TriggerEventName = default.MortarStrike_Stage2_SMK_TriggerName;
 				DelayEffect_MortarStrike.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyLongDescription(), Template.IconImage, false, , Template.AbilitySourceName);
 				Template.AddShooterEffect(DelayEffect_MortarStrike);
-
-
 			}
 			break;
 		default:
 			break;
 	}
 
+
 	Template.AbilityCooldown = Cooldown;
 
 	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
+	Template.AlternateFriendlyNameFn = TypicalSupportStrike_AlternateFriendlyName;
 	
 	return Template;
-}
-
-//
-// Modify the Support Strike Gamestate so we can enable Vague Orders on XCom's side
-// 
-simulated function XComGameState TypicalSupportStrike_BuildGameState( XComGameStateContext Context )
-{
-	local XComGameStateHistory					History;
-	local XComGameState_HeadquartersXCom		XComHQ;
-	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
-	local XComGameState							NewGameState;
-	local XComGameState_Unit					UnitState;
-	local XComGameState_AIGroup					GroupState;
-	local StateObjectReference					UnitRef;
-	local UnitValue								SightUnitValue;
-	local int									Idx;
-	local XComGameStateContext_Ability			AbilityContext;
-	local XComGameState_Ability					AbilityState;
-
-	History = `XCOMHISTORY;
-	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
-
-	//Do all the normal effect processing
-	NewGameState = TypicalAbility_BuildGameState(Context);
-
-	// Stop here if we're in tactical since the next part requires the player be in a campaign
-	if (class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true))
-		return NewGameState;
-
-	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
-
-	if (SupportStrikeMgr == none) // We're in a place that Support Strikes doesn't exist, exit the function
-		return NewGameState;
-
-	SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
-
-	AbilityContext = XComGameStateContext_Ability(Context);
-	AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(AbilityContext.InputContext.AbilityRef.ObjectID));
-
-	XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
-	XComHQ.PayStrategyCost(NewGameState, SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].StrikeCost, XComHQ.OTSUnlockScalars, XComHQ.GTSPercentDiscount);
-
-	// Find the cost again and modify it
-	Idx = SupportStrikeMgr.CurrentMonthAbilityIntelCost.Find('TemplateName', AbilityState.GetMyTemplateName());
-	if (Idx != INDEX_NONE)
-	{
-		SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].StrikeCost.ResourceCosts[0].Quantity = 
-			(	SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].StrikeCost.ResourceCosts[0].Quantity *
-				SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].Multiplier ) +
-				SupportStrikeMgr.CurrentMonthAbilityIntelCost[Idx].Addition;
-	}
-
-	//Return the game state we have created
-	return NewGameState;
 }
 
 //The actual ability
@@ -288,6 +232,7 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.MortarStrike_Stage2_HE_AbilityName);
 	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_bigbooms"; // TODO: Change this icon
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
+
 	Template.AbilitySourceName = 'eAbilitySource_Perk';
 	Template.Hostility = eHostility_Offensive;
 
@@ -372,13 +317,13 @@ static function X2DataTemplate CreateSupport_Artillery_Offensive_MortarStrike_HE
 	Template.ActionFireClass = class'X2Action_MortarStrikeStageTwo';
 	Template.bSkipExitCoverWhenFiring = true;
 
-	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
+	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 	Template.BuildVisualizationFn = Mortar_Stage2_BuildVisualization;
 
 	Template.LostSpawnIncreasePerUse = default.MortarStrike_HE_LostSpawnIncreasePerUse;
 	Template.bFrameEvenWhenUnitIsHidden = true;
 
-	Template.AssociatedPlayTiming = SPT_BeforeParallel;
+//	Template.AssociatedPlayTiming = SPT_BeforeParallel;
 
 	return Template;
 }
@@ -462,7 +407,6 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
 
-
 //
 //	Template.bDontDisplayInAbilitySummary = true;
 //	
@@ -493,7 +437,7 @@ static function X2DataTemplate CreateSupport_Artillery_Defensive_MortarStrike_SM
 	Template.LostSpawnIncreasePerUse = default.MortarStrike_SMK_LostSpawnIncreasePerUse;
 	Template.bFrameEvenWhenUnitIsHidden = true;
 
-	Template.AssociatedPlayTiming = SPT_BeforeParallel;
+	Template.AssociatedPlayTiming = SPT_AfterParallel;
 
 	return Template;
 }
@@ -509,7 +453,8 @@ static function Mortar_Stage2_BuildVisualization(XComGameState VisualizeGameStat
 	local X2Action							FoundAction;
 	local X2Action_CameraLookAt				LookAtTargetAction;
 	local X2Action_TimedWait				WaitAction;
-	local X2Effect_SpawnAOEIndicator		AOEEffect;
+	local vector							TargetLocation;
+	local X2Action_MarkerNamed				CameraReplaceAction;
 
 	VisMgr = `XCOMVISUALIZATIONMGR;
 	History = `XCOMHISTORY;
@@ -523,27 +468,56 @@ static function Mortar_Stage2_BuildVisualization(XComGameState VisualizeGameStat
 													   eReturnType_Reference,
 													   VisualizeGameState.HistoryIndex);	
 
-	UnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState);
-	AOEEffectState = UnitState.GetUnitAffectedByEffectState(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
+	//Add our post visualization function to the context
+   if (Context.PostBuildVisualizationFn.Find(LookAtLocation_PostBuildVisualization) == INDEX_NONE)
+   {
+       Context.PostBuildVisualizationFn.AddItem(LookAtLocation_PostBuildVisualization);
+   }
 
-	if( AOEEffectState == none )
-	{
-		`LOG("[Mortar_Stage2_BuildVisualization] No AOE Effect Exists!",, 'WotC_Gameplay_SupportStrikes');
-	}
-
-    //    Add a camera action as a child to the Fire Action's parent, that lets both Fire Action and Camera Action run in parallel
-    //    pan camera towards the shooter for the firing animation
-	// This "should" be on a independent leaf since we want the action to continue
-    LookAtTargetAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(ActionMetadata, Context));
-	LookAtTargetAction.LookAtLocation = AOEEffectState.ApplyEffectParameters.AbilityInputContext.TargetLocations[0];
-	LookAtTargetAction.LookAtDuration = 5.00f;
-
+	//Add Marker here so we can replace this action with a camera
+	CameraReplaceAction = X2Action_MarkerNamed(class'X2Action_MarkerNamed'.static.AddToVisualizationTree(ActionMetadata, Context));
+	CameraReplaceAction.SetName("CameraReplace");
+	
 	// Randomly wait a few seconds before firing off a mortar
-	WaitAction = X2Action_TimedWait(class'X2Action_TimedWait'.static.AddToVisualizationTree(ActionMetadata, Context));
+	WaitAction = X2Action_TimedWait(class'X2Action_TimedWait'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
 	WaitAction.DelayTimeSec = `SYNC_FRAND_STATIC(20) + (`SYNC_FRAND_STATIC(3) + 1.0f);	//Use Float Random to have more variety
 
 	//Iridar: Call the typical ability visuailzation. With just that, the ability would look like the soldier firing the rocket upwards, and then enemy getting damage for seemingly no reason.
 	TypicalAbility_BuildVisualization(VisualizeGameState);
+}
+
+simulated function LookAtLocation_PostBuildVisualization(XComGameState VisualizeGameState)
+{
+	local XComGameStateContext_Ability	Context;	
+	local X2Action_CameraLookAt			LookAtTargetAction;
+	local XComGameState_Effect			AOEEffectState;
+	local XComGameState_Unit			SourceUnitState;
+	local XComGameStateVisualizationMgr VisualizationMgr;
+	local array<X2Action>				FoundActions;
+	local X2Action						TestMarkerAction;
+	//`LOG("Calling Dynamic Deployment Build Viz function", bLog, 'IRIDAR');
+
+	VisualizationMgr = `XCOMVISUALIZATIONMGR;
+
+	Context = XComGameStateContext_Ability(VisualizeGameState.GetContext());
+
+	SourceUnitState = XComGameState_Unit(VisualizeGameState.GetGameStateForObjectID(Context.InputContext.SourceObject.ObjectID));
+	AOEEffectState = SourceUnitState.GetUnitAffectedByEffectState(class'X2Effect_SpawnAOEIndicator'.default.EffectName);
+
+	if( AOEEffectState == none )
+	{
+		`LOG("[LookAtLocation_PostBuildVisualization] No AOE Effect Exists!",, 'WotC_Gameplay_SupportStrikes');
+		return;
+	}
+
+	VisualizationMgr.GetNodesOfType(VisualizationMgr.BuildVisTree, class'X2Action_MarkerNamed', FoundActions);
+	foreach FoundActions(TestMarkerAction)
+	{
+		LookAtTargetAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.CreateVisualizationAction(Context));
+		LookAtTargetAction.LookAtLocation = AOEEffectState.ApplyEffectParameters.AbilityInputContext.TargetLocations[0];
+		LookAtTargetAction.LookAtDuration = 6.00f;
+		VisualizationMgr.ReplaceNode(TestMarkerAction, LookAtTargetAction);
+	}
 }
 
 static function EventListenerReturn Mortar_Listener(Object EventData, Object EventSource, XComGameState GameState, Name EventID, Object CallbackData)
