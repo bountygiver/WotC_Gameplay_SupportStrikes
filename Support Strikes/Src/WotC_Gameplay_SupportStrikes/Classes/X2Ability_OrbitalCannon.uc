@@ -5,7 +5,7 @@
 //			Same deal as Mortar strikes but only one appears
 //
 //---------------------------------------------------------------------------------------
-class X2Ability_OrbitalCannon extends X2Ability
+class X2Ability_OrbitalCannon extends X2Ability_SupportStrikes_Common
 	config(GameData_SupportStrikes);
 
 var config int IonCannon_Local_Cooldown;				//
@@ -48,7 +48,7 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 {
 	local X2AbilityTemplate						Template;
 	local X2AbilityCost_ActionPoints			ActionPointCost;
-	local X2AbilityCooldown_LocalAndGlobal		Cooldown;
+	local X2AbilityCooldown_LocalAndGlobal_All	Cooldown;
 	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
 	local X2Effect_IRI_DelayedAbilityActivation DelayEffect_MortarStrike;
@@ -58,6 +58,7 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 	local X2Effect_SpawnAOEIndicator			IonCannon_Stage1TargetEffect;
 	local X2AbilityCost_SharedCharges			AmmoCost;
 	local X2Condition_MapCheck					MapCheck;
+	local X2Condition_ResourceCost				IntelCostCheck;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'Ability_Support_Orbital_Off_IonCannon_Stage1');
 
@@ -95,7 +96,7 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 	ActionPointCost.bConsumeAllPoints = true;
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
-	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal';
+	Cooldown = new class'X2AbilityCooldown_LocalAndGlobal_All';
 	Cooldown.iNumTurns = default.IonCannon_Local_Cooldown;
 	Cooldown.NumGlobalTurns = default.IonCannon_Global_Cooldown;
 	Template.AbilityCooldown = Cooldown;
@@ -109,6 +110,8 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 	MapCheck = new class'X2Condition_MapCheck';
 	Template.AbilityShooterConditions.AddItem(MapCheck);
 
+	IntelCostCheck = new class'X2Condition_ResourceCost';
+	Template.AbilityShooterConditions.AddItem(IntelCostCheck);
 	/* END Shooter Conditions */
 
 	VisibilityCondition = new class'X2Condition_Visibility';
@@ -134,9 +137,10 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 	IonCannon_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
 	Template.AddShooterEffect(IonCannon_Stage1TargetEffect);
 
-	Template.BuildNewGameStateFn = class'X2Ability_MortarStrikes'.static.TypicalSupportStrike_BuildGameState;
+	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
-	
+	Template.AlternateFriendlyNameFn = TypicalSupportStrike_AlternateFriendlyName;
+
 	return Template;
 }
 
@@ -151,25 +155,32 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage2(
 	//local X2AbilityCost_ActionPoints			ActionPointCost;
 	local X2AbilityToHitCalc_StandardAim		StandardAim;
 	/* Temp Shit */
-	local X2AbilityMultiTarget_Cylinder			MultiTarget;
+	local X2AbilityMultiTarget_Radius			MultiTarget;
 	local X2AbilityTarget_Cursor				CursorTarget;
 //	local X2Condition_Visibility				VisibilityCondition;
 	local X2Condition_UnitProperty				UnitPropertyCondition;
 	local X2Effect_PersistentStatChange			DisorientedEffect;
 	local X2Effect_Panicked						PanickedEffect;
+	local X2Effect_IRI_PersistentSquadViewer	ViewerEffect;
 
 	`CREATE_X2ABILITY_TEMPLATE(Template, default.IonCannon_Stage2AbilityName);
-	Template.eAbilityIconBehaviorHUD = EAbilityIconBehavior_NeverShow;
+	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_NeverShow;
 
+	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_archon_blazingpinions"; // TODO: Change this icon
+	Template.AbilitySourceName = 'eAbilitySource_Perk';
+	Template.Hostility = eHostility_Offensive;
+//
+//	Template.bDontDisplayInAbilitySummary = true;
+//	
 	//	Targeting and Triggering
 	CursorTarget = new class'X2AbilityTarget_Cursor';
 	Template.AbilityTargetStyle = CursorTarget;
 	Template.TargetingMethod = class'X2TargetingMethod_ViperSpit';
 
-	MultiTarget = new class'X2AbilityMultiTarget_Cylinder';
+	MultiTarget = new class'X2AbilityMultiTarget_Radius';
 	MultiTarget.bIgnoreBlockingCover = true;
 	MultiTarget.bUseWeaponRadius = true;
-	MultiTarget.bUseOnlyGroundTiles = true;
+//	MultiTarget.fTargetHeight = 10;
 	Template.AbilityMultiTargetStyle = MultiTarget;
 
 	StandardAim = new class'X2AbilityToHitCalc_StandardAim';
@@ -193,13 +204,6 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage2(
 	//	Should not be here unless you want Mortars to stop firing if the soldier becomes disoriented or something like that.
 	//Template.AddShooterEffectExclusions();
 
-	Template.IconImage = "img:///UILibrary_PerkIcons.UIPerk_archon_blazingpinions"; // TODO: Change this icon
-	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
-	Template.AbilitySourceName = 'eAbilitySource_Perk';
-	Template.Hostility = eHostility_Offensive;
-//
-//	Template.bDontDisplayInAbilitySummary = true;
-//	
 	// This ability fires when the event DelayedExecuteRemoved fires on this unit
 	DelayedEventListener = new class'X2AbilityTrigger_EventListener';
 	DelayedEventListener.ListenerData.Deferral = ELD_OnStateSubmitted;
@@ -219,6 +223,12 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage2(
 	DamageEffect.bIgnoreBaseDamage = false;
 	DamageEffect.bApplyWorldEffectsForEachTargetLocation = true;
 	Template.AddMultiTargetEffect(DamageEffect);
+
+	ViewerEffect = new class'X2Effect_IRI_PersistentSquadViewer';
+	ViewerEffect.BuildPersistentEffect(1, false, false, false, eGameRule_PlayerTurnEnd);
+	ViewerEffect.bUseWeaponRadius = true;
+	ViewerEffect.EffectName = 'IRI_Rocket_Reveal_FoW_Effect';
+	Template.AddShooterEffect(ViewerEffect);
 
 	if (default.IonCannon_Panic_Enable)
 	{
