@@ -8,65 +8,23 @@
 
 class X2Effect_SpawnSquad extends X2Effect_Persistent config(GameData_SupportStrikes);
 
-struct SpawnCharacterData
-{
-	var name TemplateName;
-	var string CharacterPoolName;
-	var name WPNCategory;		// GiveItem executes if true for possible primary and secondary weapons
-	structdefaultproperties
-	{
-		CharacterPoolName = "";
-	}
-};
+//	this is the name of the Unit Value that will be used to store the Object Reference of spawned units
+//	so it can be passed along to the BuildVisualization function of the ability that applied this persistent effect
+var privatewrite name					SpawnedUnitValueName;
 
-struct XComDropTrooperData
-{
-	var bool bSequential;			// If false, it's randomly picked
-	var bool bIsPilot;				// Special case for Matinee
-	var array<SpawnCharacterData> CharacterTemplate;
-	var int MinForceLevel;
-	var int MaxForceLevel;
-	var int AlertLevel;
-	var int MaxUnitsToSpawn;
+var privatewrite name					EncounterID;
 
-	structdefaultproperties
-	{
-		AlertLevel = 0;
-		MinForceLevel = 0;
-		MaxForceLevel = 0;
-		MaxUnitsToSpawn = 0;
-	}
-};
+var privatewrite name					IsACosmeticUnit;
 
+var() int								MaxSoldiers;
+var() int								MaxPilots;
 
-struct WeaponDataIntermediary 
-{
-	var name PriWeaponTemplate;
-	var name SecWeaponTemplate;
-	structdefaultproperties
-	{
-		PriWeaponTemplate = none;
-		SecWeaponTemplate = none;
-	}
-};
+var() bool								bSpawnCosmeticSoldiers;
 
-struct RandomWeaponData
-{
-	var name Category;
-	var array<WeaponDataIntermediary> arrWeapons;
-};
-
-
-var config array<XComDropTrooperData>	arrSpawnUnitData;
-var config array<RandomWeaponData>		arrRandomWeapons;
 var config int							SpawnedUnit_StandardAP;
 var config int							SpawnedUnit_MovementOnlyAP;
 
-//	this is the name of the Unit Value that will be used to store the Object Reference of spawned units
-//	so it can be passed along to the BuildVisualization function of the ability that applied this persistent effect
-var privatewrite name SpawnedUnitValueName;
-
-var privatewrite name EncounterID;
+var privatewrite array<TTile>			UnusedLocations; // At this point of the spawning, the unit doesn't exist yet. We need this property to store which tiles were already picked
 
 simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffectParameters, XComGameState_BaseObject kNewTargetState, XComGameState NewGameState, XComGameState_Effect NewEffectState)
 {
@@ -76,50 +34,70 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 
 	if (TargetUnitState == none) 
 	{
-		`LOG("[OnEffectAdded()] Spawn Soldier effect was magically applied to a non-existent unit!", , 'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ GetFuncName() $ "] Spawn Soldier effect was magically applied to a non-existent unit!", , 'WotC_Gameplay_SupportStrikes');
 	}
 
-	`LOG("[OnEffectAdded()] Begin Spawn Event", , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ GetFuncName() $ "] Begin Spawn Event", , 'WotC_Gameplay_SupportStrikes');
 
-	// We've already done this
-//	TriggerSpawnEvent(ApplyEffectParameters, TargetUnitState, NewGameState);
+	TriggerSpawnEvent(ApplyEffectParameters, TargetUnitState, NewGameState);
 
-	`LOG("[OnEffectAdded()] Event Completed", , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ GetFuncName() $ "] Event Completed", , 'WotC_Gameplay_SupportStrikes');
 }
 
-/*
 function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XComGameState_Unit EffectTargetUnit, XComGameState NewGameState)
 {
-	local XComGameState_Unit				TargetUnitState, SpawnedUnit;
-	local XComGameStateHistory				History;
-	local StateObjectReference				NewUnitRef;
-	local Vector							SpawnLocation;
-	local int								i, Idx;
-	local XComDropTrooperData				ChosenData;
-	local XComGameState_AIGroup				NewGroupState;
-	local XComGameState_BattleData			BattleData;
-	local SpawnCharacterData				PilotCharTemplate;
+	local XComGameState_Unit					TargetUnitState, SpawnedUnit;
+	local XComGameStateHistory					History;
+	local int									i, Idx;
+	local XComGameState_AIGroup					NewGroupState;
+	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
+	local XComGameState_SupportStrike_Tactical	StrikeTactical;
+	local XComWorldData							World;
+	local vector								Veck;
+	local TTile									kTile;
+	local array<TTile>							FinalTiles;
+
+	Idx = 0;
 
 	History = `XCOMHISTORY;
+
 	TargetUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ApplyEffectParameters.TargetStateObjectRef.ObjectID));
 	if (TargetUnitState == none) 
 	{
-		`LOG("[OnEffectAdded()] Failed to get the history for Unit State of the Spawn Soldier effect's target!", , 'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ GetFuncName() $ "] Failed to get the history for Unit State of the Spawn Soldier effect's target!", , 'WotC_Gameplay_SupportStrikes');
 		`Redscreen("Failed to get the history for Unit State of the Spawn Soldier effect's target");
 	}
 
-	BattleData = XComGameState_BattleData(History.GetSingleGameStateObjectForClass(class'XComGameState_BattleData'));
+	// Get the ability state object from the AEP so we can access the Stage 2's Multi Target style
+//	AbilityStateObject = XComGameState_Ability(History.GetGameStateForObjectID(ApplyEffectParameters.AbilityStateObjectRef.ObjectID));	
+//	AbilityTemplate = AbilityStateObject.GetMyTemplate();
+//
+//	if( AbilityTemplate.AbilityMultiTargetStyle != none )
+//	{
+//		AbilityTemplate.AbilityMultiTargetStyle.GetValidTilesForLocation(AbilityStateObject, ApplyEffectParameters.AbilityInputContext.TargetLocations[0], UnusedLocations);
+//		`LOG("[" $ GetFuncName() $ "] Generated " $ UnusedLocations.Length $ " possible locations from the center: " $ ApplyEffectParameters.AbilityInputContext.TargetLocations[0], , 'WotC_Gameplay_SupportStrikes');
+//	}
 
-	// Choose a XComDropTrooperData struct
-	if (default.arrSpawnUnitData.Length == 0)
+
+	World = `XWORLD;
+	UnusedLocations = ApplyEffectParameters.AbilityResultContext.RelevantEffectTiles;
+
+	`LOG("[" $ GetFuncName() $ "] Generated " $ UnusedLocations.Length $ " possible locations from the center: " $ ApplyEffectParameters.AbilityInputContext.TargetLocations[0], , 'WotC_Gameplay_SupportStrikes');
+
+	//filter through all tiles and prune tiles that are not on the floor
+	foreach UnusedLocations(kTile)
 	{
-		`LOG("[TriggerSpawnEvent()] ERROR, No DataSet exists!",, 'WotC_Gameplay_SupportStrikes');
-		return;
+		if ( World.GetFloorPositionForTile(kTile, Veck) )
+			FinalTiles.AddItem(kTile);
 	}
-	ChosenData = PickBestDataSet(BattleData.GetForceLevel());
 
-	//	get a the spawn location
-	SpawnLocation = GetSpawnLocation(ApplyEffectParameters, NewGameState);
+	// Copy the array back into our tiles
+	UnusedLocations = FinalTiles;
+
+	`LOG("[" $ GetFuncName() $ "] Pruned non-floor and invalid tiles and are left with " $ UnusedLocations.Length $ " possible locations from the center: " $ ApplyEffectParameters.AbilityInputContext.TargetLocations[0], , 'WotC_Gameplay_SupportStrikes');
+
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+	StrikeTactical = XComGameState_SupportStrike_Tactical(History.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
 
 	// Create a brand new singleton AI Group exclusively for the Trooper Swarm
 	// SpawnManager will stuff the units in here automatically once we have the ObjectID
@@ -128,106 +106,123 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 	NewGroupState.EncounterID	= EncounterID;
 	NewGroupState.TeamName		= eTeam_XCom;
 
-	`LOG("[TriggerSpawnEvent()] Created AIGroup GameState with Object ID " $ NewGroupState.ObjectID, , 'WotC_Gameplay_SupportStrikes');
-	`LOG("[TriggerSpawnEvent()] ChosenData.MaxUnitsToSpawn: " $ ChosenData.MaxUnitsToSpawn,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ GetFuncName() $ "] Created AIGroup GameState with Object ID " $ NewGroupState.ObjectID, , 'WotC_Gameplay_SupportStrikes');
+
+	`LOG("[" $ GetFuncName() $ "] Querying Object: " $ StrikeTactical.XComResistanceRNFIDs.Length $ " Soldiers, " $ StrikeTactical.CosmeticResistanceRNFIDs.Length $ " Copies, and " $ StrikeTactical.Pilots.Length $ " Pilots." ,, 'WotC_Gameplay_SupportStrikes');
 
 	//	Spawn Max Soldiers
-	for (i = 0; i < ChosenData.MaxUnitsToSpawn; i++)
+	for (i = 0; i < MaxSoldiers; i++)
 	{
-		if (ChosenData.bSequential)	// Be sure not to go beyond index, use modulo to return back to 0
-			SpawnedUnit = AddXComFriendliesToTactical( ChosenData.CharacterTemplate[i % ChosenData.CharacterTemplate.Length], NewGameState, SpawnLocation, NewGroupState.ObjectID);
-		else	// Randomly roll each iteration
-			SpawnedUnit = AddXComFriendliesToTactical( ChosenData.CharacterTemplate[`SYNC_RAND_STATIC(ChosenData.CharacterTemplate.Length)], NewGameState, SpawnLocation, NewGroupState.ObjectID);
-
-		NewUnitRef = SpawnedUnit.GetReference();
-
+		`LOG("[" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.XComResistanceRNFIDs[i].ObjectID ,, 'WotC_Gameplay_SupportStrikes');
+		SpawnedUnit = AddXComFriendliesToTactical( StrikeTactical.XComResistanceRNFIDs[i], NewGameState, GetSpawnLocation(ApplyEffectParameters, NewGameState), NewGroupState);
 		//	we use a Unit Value on the target of the persistent effect to store the Reference of the soldier we just spawned
 		//	the ability that applied this persistent effect will use this Reference in its Build Visulization function to propely visualize the soldier's spawning
-		EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ i), NewUnitRef.ObjectID, eCleanup_BeginTurn);
-
+		EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ Idx), SpawnedUnit.ObjectID, eCleanup_BeginTurn);
 		//	Do some final hair licking for each newly spawned soldier
-		OnSpawnComplete(ApplyEffectParameters, NewUnitRef, NewGameState);
+		OnSpawnComplete(ApplyEffectParameters, StrikeTactical.XComResistanceRNFIDs[i], NewGameState);
+		
+		Idx++;
 	}
 
-	//Start from this index for bottom loop
-	i = ChosenData.MaxUnitsToSpawn;
-
-	// Find Spawndata for pilots
-	Idx = default.arrSpawnUnitData.Find('bIsPilot', true);
-	if (Idx != INDEX_NONE)
+	//	Spawn Max Soldiers
+	if (bSpawnCosmeticSoldiers)
 	{
-		foreach default.arrSpawnUnitData[Idx].CharacterTemplate(PilotCharTemplate)
+		for (i = 0; i < MaxSoldiers; i++)
 		{
-			SpawnedUnit = AddXComFriendliesToTactical ( PilotCharTemplate, NewGameState, SpawnLocation, NewGroupState.ObjectID, true);
+			// Spawn in the cosmetic units too
+			`LOG("[" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.CosmeticResistanceRNFIDs[i].ObjectID ,, 'WotC_Gameplay_SupportStrikes');
+			SpawnedUnit = AddXComFriendliesToTactical( StrikeTactical.CosmeticResistanceRNFIDs[i], NewGameState, vect(0,0,0), NewGroupState, true);
+			EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ Idx), SpawnedUnit.ObjectID, eCleanup_BeginTurn);
 
-			NewUnitRef = SpawnedUnit.GetReference();
-
-			//	we use a Unit Value on the target of the persistent effect to store the Reference of the soldier we just spawned
-			//	the ability that applied this persistent effect will use this Reference in its Build Visulization function to propely visualize the soldier's spawning
-			EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ i), NewUnitRef.ObjectID, eCleanup_BeginTurn);
-			i++;
-			//	Do some final hair licking for each newly spawned soldier
-			OnSpawnComplete(ApplyEffectParameters, NewUnitRef, NewGameState);
+			// Commented out since the unit's visualizer will be destroyed after the matinee plays
+			//OnSpawnComplete(ApplyEffectParameters, StrikeTactical.CosmeticResistanceRNFIDs[i], NewGameState);
+			Idx++;
 		}
 	}
+
+	for (i = 0; i < MaxPilots; i++)
+	{
+		// Spawn in pilots
+		`LOG("[" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.Pilots[i].ObjectID ,class'X2Helpers_MiscFunctions'.static.Log(,true), 'WotC_Gameplay_SupportStrikes');
+		SpawnedUnit = AddXComFriendliesToTactical ( StrikeTactical.Pilots[i], NewGameState, vect(0,0,0), NewGroupState, true);
+		EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ Idx), SpawnedUnit.ObjectID, eCleanup_BeginTurn);
+
+		// Commented out since the unit's visualizer will be destroyed after the matinee plays
+		//OnSpawnComplete(ApplyEffectParameters, StrikeTactical.Pilots[i], NewGameState);
+		Idx++;
+	}
+
+	`LOG("[" $ GetFuncName() $ "] Index count: " $ Idx ,, 'WotC_Gameplay_SupportStrikes');
 }
-*/
+
 function vector GetSpawnLocation(const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState)
 {
+	local int				Idx;
+	local XComWorldData		World;
+	local TTile				ChosenTile;
+	local vector			Destination;
 
-	if(ApplyEffectParameters.AbilityInputContext.TargetLocations.Length == 0)
-	{
-		`LOG("Attempting to create X2Effect_SpawnDummyTarget without a target location!",, 'WotC_Gameplay_SupportStrikes');
-		return vect(0,0,0);
-	}
+	Idx = `SYNC_RAND(0, UnusedLocations.Length);
+	World = `XWORLD;
 
-	return ApplyEffectParameters.AbilityInputContext.TargetLocations[0];
-}
+	ChosenTile = UnusedLocations[Idx];
 
-// Not the best optimization ever in picking the closest Dataset between a range
-public static function XComDropTrooperData PickBestDataSet(int ForceLevel)
-{
-	local int i;
+	//Pop it off the stack
+	UnusedLocations.Remove(Idx, 1);
+	
+	// Do a second check to make sure we get a tile that's not blocked
+	// May overlap since the unit hasn't existed yet
+	//ChosenTile = class'Helpers'.static.GetClosestValidTile(ChosenTile);
 
-	`LOG("[PickBestDataSet()] Current force level: " $ ForceLevel,, 'WotC_Gameplay_SupportStrikes');
+	Destination = World.GetPositionFromTileCoordinates(ChosenTile);
 
-	for (i = 0; i < default.arrSpawnUnitData.Length; i++)
-	{
-		//Skip over empty Character Template arrays
-		if (default.arrSpawnUnitData[i].CharacterTemplate.Length == 0)
-			continue;
+	`LOG("[" $ GetFuncName() $ "] Picked Vector: " $ Destination, , 'WotC_Gameplay_SupportStrikes');
 
-		if ( (ForceLevel >= default.arrSpawnUnitData[i].MinForceLevel) &&
-			 (ForceLevel <= default.arrSpawnUnitData[i].MaxForceLevel) )
-		{
-			`LOG("[PickBestDataSet()] Picked data set at index " $ i,, 'WotC_Gameplay_SupportStrikes');
-			return default.arrSpawnUnitData[i];
-		}
-	}
-	`LOG("[PickBestDataSet()] ERROR, no dataset was picked!",, 'WotC_Gameplay_SupportStrikes');
+	return Destination;
 }
 
 // Spawn a random unit into tactical mission
-// Public because an event listener needs this
-public static function XComGameState_Unit AddXComFriendliesToTactical(SpawnCharacterData CharTemplate, XComGameState NewGameState, Vector SpawnLocation, int GroupID, optional bool bIsCineActor = false)
+public static function XComGameState_Unit AddXComFriendliesToTactical(StateObjectReference UnitRef, XComGameState NewGameState, Vector SpawnLocation, XComGameState_AIGroup AIGroup, optional bool bIsCineActor = false)
 {
 	local XComGameStateHistory				History;
-	local bool								bUsingStartState;
 	local XComGameState_Unit				SpawnedUnit;
-	local StateObjectReference				SpawnedUnitRef;
+	local XComGameState_Player				PlayerState;
 	local StateObjectReference				ItemReference;
 	local XComGameState_Item				ItemState;
-	local WeaponDataIntermediary			WeaponToAdd;
-	local int								Idx;
+	local XComGameState_BattleData			BattleData;
+	local XComGameState_AIGroup				PreviousGroupState;
+	local X2EventManager					EventManager;
 
 	History = `XCOMHISTORY;
 
-	bUsingStartState = (NewGameState == History.GetStartState());
+	// Bad ObjectID test
+	if (UnitRef.ObjectID == 0)
+	{
+		`LOG("[" $ GetFuncName() $ "] ERROR, Invalid ObjectID was sent in!",, 'WotC_Gameplay_SupportStrikes');
+		return none;
+	}
+	
+	//Create a new object with the same ID
+	SpawnedUnit = XComGameState_Unit(NewGameState.CreateStateObject(class'XComGameState_Unit', UnitRef.ObjectID));
 
-	SpawnedUnitRef = `SPAWNMGR.CreateUnit( SpawnLocation, CharTemplate.TemplateName, eTeam_XCom, bUsingStartState, false, NewGameState, , CharTemplate.CharacterPoolName, false, , GroupID );
-	SpawnedUnit = XComGameState_Unit(History.GetGameStateForObjectID(SpawnedUnitRef.ObjectID));
-	SpawnedUnit.bMissionProvided = true;	//Mission provided so it doesn't count towards mission losses
-//	SpawnedUnit.bTriggerRevealAI = false;	
+	SpawnedUnit.BeginTacticalPlay(NewGameState);	// this needs to be called explicitly since we're adding an existing state directly into tactical
+	SpawnedUnit.bTriggerRevealAI = false;			// Skip over since we've just spawned in
+
+	if (!SpawnedUnit.bMissionProvided)
+		SpawnedUnit.bMissionProvided = true;
+
+	// Move the unit to the spawn location according to the AEP object
+	SpawnedUnit.SetVisibilityLocationFromVector(SpawnLocation);
+
+	// assign the new unit to the human team
+	foreach History.IterateByClassType(class'XComGameState_Player', PlayerState)
+	{
+		if(PlayerState.GetTeam() == eTeam_XCom)
+		{
+			SpawnedUnit.SetControllingPlayer(PlayerState.GetReference());
+			break;
+		}
+	}
 
 	// add item states. This needs to be done so that the visualizer sync picks up the IDs and creates their visualizers -LEB
 	foreach SpawnedUnit.InventoryItems(ItemReference)
@@ -240,38 +235,70 @@ public static function XComGameState_Unit AddXComFriendliesToTactical(SpawnChara
 		ItemState.CreateCosmeticItemUnit(NewGameState);
 	}
 
-	if (bIsCineActor)
-		SpawnedUnit.SetUnitFloatValue('IsPilot', 1, eCleanup_Never);
-
-	// Replace primary/secondary weapons if needed
-	if (CharTemplate.WPNCategory != '' && default.arrRandomWeapons.Length > 0 && !bIsCineActor)
+	if (!bIsCineActor || !SpawnedUnit.GetMyTemplate().bIsCosmetic)
 	{
-		Idx = default.arrRandomWeapons.Find('Category', CharTemplate.WPNCategory);
-		if (Idx != INDEX_NONE)
+		// Testing for now, remove the group state when handing the group to the AI
+		AIGroup = GetPlayerGroup();
+		if (AIGroup != none )
 		{
-			WeaponToAdd = default.arrRandomWeapons[Idx].arrWeapons[ `SYNC_RAND_STATIC(default.arrRandomWeapons.Length) ];
-			if (WeaponToAdd.PriWeaponTemplate != '')
-				class'X2Helpers_MiscFunctions'.static.GiveItem(WeaponToAdd.PriWeaponTemplate, SpawnedUnit, NewGameState);
+			PreviousGroupState = SpawnedUnit.GetGroupMembership(NewGameState);
 
-			if (WeaponToAdd.SecWeaponTemplate != '')
-				class'X2Helpers_MiscFunctions'.static.GiveItem(WeaponToAdd.SecWeaponTemplate , SpawnedUnit, NewGameState);
+			if( PreviousGroupState != none ) PreviousGroupState.RemoveUnitFromGroup(SpawnedUnit.ObjectID, NewGameState);
+
+			AIGroup = XComGameState_AIGroup(NewGameState.ModifyStateObject(class'XComGameState_AIGroup', AIGroup.ObjectID));
+			AIGroup.AddUnitToGroup(SpawnedUnit.ObjectID, NewGameState);
+		}
+		else
+		`LOG("[" $ GetFuncName() $ "] ERROR, No AIGroup that belongs to the player was found", , 'WotC_Gameplay_SupportStrikes');
+
+		//Add the new unit to the AI group
+		//AIGroup.AddUnitToGroup(SpawnedUnit.ObjectID, NewGameState);
+		//
+		BattleData = XComGameState_BattleData(History.GetSingleGameStateObjectForClass(class'XComGameState_BattleData'));
+		if( BattleData.UnitActionInitiativeRef.ObjectID == AIGroup.ObjectID )
+		{
+			SpawnedUnit.SetupActionsForBeginTurn();
+		}
+		else
+		{
+			if( BattleData.PlayerTurnOrder.Find('ObjectID', AIGroup.ObjectID) == INDEX_NONE )
+			{
+				`TACTICALRULES.AddGroupToInitiativeOrder(AIGroup, NewGameState);
+			}
 		}
 	}
 
-	// add abilities -LEB
-	// Must happen after items are added, to do ammo merging properly. -LEB
-	`TACTICALRULES.InitializeUnitAbilities(NewGameState, SpawnedUnit);
+	// Trigger that this unit has been spawned before we submit the entry
+	EventManager = `XEVENTMGR;
+	EventManager.TriggerEvent('UnitSpawned', SpawnedUnit, SpawnedUnit);
 
 	// submit it -LEB
 	NewGameState.AddStateObject(SpawnedUnit);
 	XComGameStateContext_TacticalGameRule(NewGameState.GetContext()).UnitRef = SpawnedUnit.GetReference();
-	
-	//	I assume this triggers the unit's abilities that activate at "UnitPostBeginPlay"
-	SpawnedUnit.BeginTacticalPlay(NewGameState); 
 
-	`LOG("[AddXComFriendliesToTactical()] Spawned Unit: " $ SpawnedUnit.GetFullName() $ " Of Template: " $ SpawnedUnit.GetMyTemplate().DataName $ " with ObjectID " $ SpawnedUnit.ObjectID, , 'WotC_Gameplay_SupportStrikes');
+	// add abilities
+	// Must happen after unit is submitted, or it gets confused about when the unit is in play or not 
+	`TACTICALRULES.InitializeUnitAbilities(NewGameState, SpawnedUnit);
+
+
+	`LOG("[" $ GetFuncName() $ "] Spawned Unit: " $ SpawnedUnit.GetFullName() $ " Of Template: " $ SpawnedUnit.GetMyTemplate().DataName $ " with ObjectID " $ SpawnedUnit.ObjectID, , 'WotC_Gameplay_SupportStrikes');
 
 	return SpawnedUnit;
+}
+
+static function XComGameState_AIGroup GetPlayerGroup()
+{
+	local XComGameState_AIGroup AIGroupState;
+
+	foreach `XCOMHISTORY.IterateByClassType(class'XComGameState_AIGroup', AIGroupState)
+	{
+		if (AIGroupState.TeamName == eTeam_XCom)
+		{
+			return AIGroupState;
+		}
+	}
+
+	return none;
 }
 
 // Helper functions to quickly get teams for inheriting classes -LEB
@@ -334,14 +361,18 @@ protected function ETeam GetUnitsOriginalTeam(const out XComGameState_Unit UnitG
 function AddSpawnVisualizationsToTracks(XComGameStateContext Context, XComGameState_Unit SpawnedUnit, out VisualizationActionMetadata SpawnedUnitTrack,
 										XComGameState_Unit EffectTargetUnit, optional out VisualizationActionMetadata EffectTargetUnitTrack)
 {
+
 	if( SpawnedUnit.GetVisualizer() == none )
 	{
 		SpawnedUnit.FindOrCreateVisualizer();
 		SpawnedUnit.SyncVisualizer();
 
-		//Stay hidden until the Matinee plays
+		//Make sure they're hidden until ShowSpawnedUnit makes them visible (SyncVisualizer unhides them)
 		XGUnit(SpawnedUnit.GetVisualizer()).m_bForceHidden = true;
+		`LOG("[" $ GetFuncName() $ "] " $ SpawnedUnit.GetFullName() $ "'s visualizer initialized" ,, 'WotC_Strategy_SupportStrikes');
 	}
+	else
+		`LOG("[" $ GetFuncName() $ "] WARNING, " $ SpawnedUnit.GetFullName() $ " already has a visualizer initialized!" ,, 'WotC_Strategy_SupportStrikes');
 }
 
 // Get the team that this unit should be added to -LEB
@@ -354,31 +385,40 @@ function ETeam GetTeam(const out EffectAppliedData ApplyEffectParameters)
 function OnSpawnComplete(const out EffectAppliedData ApplyEffectParameters, StateObjectReference NewUnitRef, XComGameState NewGameState)
 {
 	local XComGameState_Unit Unit;
-//	local XComGameState_HeadquartersXCom XComHQ;
-//	local XComGameStateHistory History;
+	local XComGameState_HeadquartersXCom XComHQ;
+	local XComGameStateHistory History;
 	local int i;
 
 	Unit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(NewUnitRef.ObjectID));
-//	History = `XCOMHISTORY;
+	History = `XCOMHISTORY;
 
 	//add actionpoints
-	for(i=0;i<default.SpawnedUnit_StandardAP;i++) Unit.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.StandardActionPoint);
-	for(i=0;i<default.SpawnedUnit_MovementOnlyAP;i++) Unit.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.MoveActionPoint);
+//	for(i=0;i<class'X2Helper_SpawnUnit'.default.SpawnedUnit_StandardAP;i++) Unit.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.StandardActionPoint);
+//	for(i=0;i<class'X2Helper_SpawnUnit'.default.SpawnedUnit_MovementOnlyAP;i++) Unit.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.MoveActionPoint);
 
-//	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
+	for(i=0;i<2;i++) 
+		Unit.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.StandardActionPoint);
+	for(i=0;i<2;i++) 
+		Unit.ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.MoveActionPoint);
+
+	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
 
 	//	add the newly spawned unit to the first empty squad slot so they appear walking out of Skyranger after the mission
 
-//	XComHQ.Squad.AddItem(NewUnitRef);
-	//XComHQ.Squad[XComHQ.Squad.Find('ObjectID', 0)].ObjectID = NewUnitRef.ObjectID;
+	XComHQ.Squad.AddItem( Unit.GetReference() );
+	XComHQ.AllSquads[0].SquadMembers.AddItem( Unit.GetReference() );
 }
 
 defaultproperties
 {
 	SpawnedUnitValueName="SpawnedSquadUnitValue"
+	IsACosmeticUnit = "IsACosmeticUnit"
 
 	EffectName="SpawnSquadEffect"
-	DuplicateResponse=eDupe_Allow
+	DuplicateResponse=eDupe_Ignore
 
-	EncounterID = XComTrooperSwarm;
+	EncounterID = "XComTrooperSwarm";
+
+	MaxSoldiers = 2;
+	MaxPilots = 1;
 }
