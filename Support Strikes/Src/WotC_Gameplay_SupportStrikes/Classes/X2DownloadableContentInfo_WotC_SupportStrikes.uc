@@ -379,3 +379,67 @@ static function GetSupportStrikeHQEvents(out array<HQEvent> arrEvents)
 	}
 }
 */
+
+/// Start Issue #419
+/// <summary>
+/// Called from X2AbilityTag.ExpandHandler
+/// Expands vanilla AbilityTagExpandHandler to allow reflection
+/// </summary>
+
+static function bool AbilityTagExpandHandler_CH(string InString, out string OutString, Object ParseObj, Object StrategyParseOb, XComGameState GameState)
+{
+	local XComGameState_Ability					AbilityState;
+	local name									Type;
+	local X2SupportStrikeUnlockTemplate			GTSUnlockTemplate;
+
+	Type = name(InString);
+
+	switch (Type)
+	{
+		case 'STRIKE_INTELCOST_USAGE_DYN':
+			OutString = "";
+			AbilityState = XComGameState_Ability(ParseObj);
+			if (AbilityState != none)
+			{
+				BuildDynamicIntelCost(OutString, AbilityState.GetMyTemplateName(), true);
+				return true;
+			}
+			
+			GTSUnlockTemplate = X2SupportStrikeUnlockTemplate(ParseObj);
+			if (GTSUnlockTemplate != none)
+			{
+				BuildDynamicIntelCost(OutString, GTSUnlockTemplate.AbilityName, true);
+				return true;
+			}
+			break;	
+	}
+	return false;
+}
+
+// Function that dynamicially builds the Intel cost string: "[12, 345, 6789]", bHighlightCurrentUsage highlights the current usage of the month
+static function BuildDynamicIntelCost(out string strDescription, name TemplateName, bool bHighlightCurrentUsage)
+{	
+	local XComGameStateHistory					History;
+	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
+	local int									Idx, i;
+
+	History = `XCOMHISTORY;
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+
+	strDescription = "[";
+	Idx = SupportStrikeMgr.GetCurrentStrikeUsage(TemplateName);
+
+	for (i = 0; i < SupportStrikeMgr.StrikeCurrentMonthUsage[Idx].MaximumCap; ++i)
+	{
+		if ((i == SupportStrikeMgr.StrikeCurrentMonthUsage[Idx].Usage) && bHighlightCurrentUsage)
+			strDescription $= "<font color='#27aae1'><b>" $ string(SupportStrikeMgr.CalculateStrikeCost_Simple(TemplateName,, i, 0)) $ "</b></font>";
+		else
+			strDescription $= string(SupportStrikeMgr.CalculateStrikeCost_Simple(TemplateName,, i, 0));
+
+		//If we aren't on the second to last, or last iterator, make a comma
+		if (i < (SupportStrikeMgr.StrikeCurrentMonthUsage[Idx].MaximumCap - 1))
+			strDescription $= ", ";
+	}
+	
+	strDescription $= "]";
+}
