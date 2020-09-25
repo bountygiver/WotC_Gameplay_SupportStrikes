@@ -37,7 +37,7 @@ static function array<X2DataTemplate> CreateTemplates()
 
 	Weapons.AddItem(CreateSupport_Air_Defensive_HeliDropIn_T1_WPN());
 
-//  Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN());
+//	Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN());
 //	Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN_Strike());
 
 	Weapons.AddItem(CreateSupport_Space_Offensive_OrbitalStrike_IonCannon_T1_WPN());
@@ -120,7 +120,7 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_WPN()
 {
 	local X2WeaponTemplate Template;
 
-	`CREATE_X2TEMPLATE(class'X2WeaponTemplate', Template, 'Support_Air_Defensive_HeliDropIn_T1');
+	`CREATE_X2TEMPLATE(class'X2WeaponTemplate', Template, 'Support_Airborne_Defensive_HeliDropIn_T1');
 	
 	Template.WeaponPanelImage = "_ConventionalRifle";                       // used by the UI. Probably determines iconview of the weapon.
 	Template.ItemCat = 'weapon';
