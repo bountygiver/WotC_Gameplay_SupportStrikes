@@ -20,8 +20,8 @@ static function CHEventListenerTemplate CreateSupportStrikeTacticalListeners()
 
 	`CREATE_X2TEMPLATE(class'CHEventListenerTemplate', Template, 'SupportStrike_TacticalListener');
 	Template.AddCHEvent('OnTacticalBeginPlay', OnTacticalBeginPlay, ELD_OnStateSubmitted, 51);
-	Template.AddCHEvent('OnTacticalBeginPlay', LoadOnDemandHeliDropIn, ELD_OnStateSubmitted, 99999);	//Same shit with highest priority
-//	Template.AddCHEvent('PlayerTurnBegun', ShowSupportStrikeMessage, ELD_Immediate, -50);
+//	Template.AddCHEvent('OnTacticalBeginPlay', LoadOnDemandHeliDropIn, ELD_OnStateSubmitted, 99999);	//Same shit with highest priority
+	Template.AddCHEvent('KillMail', RemoveFromStrikeManager, ELD_Immediate, 50);
 	Template.RegisterInTactical = true;
 
 	return Template;
@@ -35,23 +35,16 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 	local XComGameState_HeadquartersXCom					XComHQ;
 	local XComGameState_Unit								UnitState;
 	local StateObjectReference								UnitRef;
-//	local XComPresentationLayer								Pres;
-//	local TDialogueBoxData									kData;
 	local XComGameState_SupportStrikeManager				SupportStrikeMgr;
+	local XComGameState_SupportStrike_Tactical				StrikeTactical;
 	local name												UnlockName;
-	local int												Index;
 
 	if (GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
-	{
 		return ELR_NoInterrupt;
-	}
 
 	History = `XCOMHISTORY;
 	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
 //	Pres = `PRES;
-
-	// Add streaming maps to the game
-	AddStreamingCinematicMaps();
 
 	// TQL/Skirmish/Ladder/Challenge Mode Does not have the manager installed
 	if ( class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true) )
@@ -63,15 +56,15 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 	if (SupportStrikeMgr == none)
 		return ELR_NoInterrupt;
 
-	// Create a new gamestate since something will be modified
-	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("X2EventListener_SupportStrikes.OnTacticalBeginPlay");
-
-	// If there is no strikes bought, exit listener
-	if (SupportStrikeMgr.PurchasedSupportStrikes.Length == 0)
+	// If there is no strikes bought or if the "Not enough resources" flag is raised, exit listener
+	if (SupportStrikeMgr.PurchasedSupportStrikes.Length == 0 || SupportStrikeMgr.bInvalid_NoResources)
 	{
 		`LOG("[OnTacticalBeginPlay()] Player has no Strikes." ,,'WotC_Gameplay_SupportStrikes');
 		return ELR_NoInterrupt;
 	}
+
+	// Create a new gamestate since something will be modified
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("X2EventListener_SupportStrikes.OnTacticalBeginPlay");
 
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
 
@@ -83,32 +76,28 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 	{
 		`LOG("[OnTacticalBeginPlay()] No Z-level Clearance in map." ,,'WotC_Gameplay_SupportStrikes');
 		SupportStrikeMgr.bInvalid_HeightClearance = true;
-				
-		// Report to the player that the site is invalid for support strikes
-//		kData.eType     = eDialog_Alert;
-//		kData.strTitle  = class'UIAlert_SupportStrikes'.default.strTitle_Error_StrikeNotAvaliable;
-//		kData.strText   = class'UIAlert_SupportStrikes'.default.strDesc_Reason_MissionSiteInvalid;
-//		kData.strAccept = Pres.m_strOK;
-//
-//		Pres.UIRaiseDialog( kData );	
 	}
+	// If the flag is not raised, then there's support strikes to add
 	else
 	{
-		// Check all units in the squad and add the appropriate items
+		//Add our cinematic map to the game
+		StrikeTactical = XComGameState_SupportStrike_Tactical(History.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
+
+		// Add any cinematic umaps to the game
+		if (StrikeTactical != none)
+			AddStreamingCinematicMaps(StrikeTactical);
+
+		// Check all units in the squad and add the appropriate items (this includes sitrep units)
 		foreach XComHQ.Squad(UnitRef)
 		{
 			UnitState = XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID));
 			if (UnitState != none)
 			{
 				UnitState = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitState.ObjectID));
-				foreach SupportStrikeMgr.PurchasedSupportStrikes(UnlockName)
+				foreach SupportStrikeMgr.CurrentMissionSupportStrikes(UnlockName)
 				{
-					Index = SupportStrikeMgr.SupportStrikeData.Find('GTSTemplate', UnlockName);
-					if (Index != INDEX_NONE)
-					{
-						class'X2Helpers_MiscFunctions'.static.GiveItem(SupportStrikeMgr.SupportStrikeData[Index].ItemToGive, UnitState, NewGameState);
-						`LOG("[OnTacticalBeginPlay()] " $ UnitState.GetFullName() $ " has been given " $ SupportStrikeMgr.SupportStrikeData[Index].ItemToGive,,'WotC_Gameplay_SupportStrikes');
-					}
+					class'X2Helpers_MiscFunctions'.static.GiveItem(UnlockName, UnitState, NewGameState);
+					`LOG("[OnTacticalBeginPlay()] " $ UnitState.GetFullName() $ " has been given " $ UnlockName,,'WotC_Gameplay_SupportStrikes');
 				}
 			}
 		}
@@ -116,9 +105,6 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 		// Report to the player that the support team is ready for instructions
 		// This will eventually be replaced with a Narrative moment
 		SupportStrikeMgr.bValid = true;
-
-//		Pres.UITutorialBox( class'UIAlert_SupportStrikes'.default.strTitle_Ready_StrikeAvaliable, 
-//		class'UIAlert_SupportStrikes'.default.strDesc_Ready_StrikeAvaliable, "" );
 	}
 
 	// If something happened, submit gamestate
@@ -149,9 +135,9 @@ static function bool DoesGeneratedMissionHaveInvalidMap(XComGameStateHistory His
 	PlotDef = `PARCELMGR.GetPlotDefinition(BattleData.MapData.PlotMapName);
 	PlotType = PlotDef.strType;
 
-	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Count: Disallowed Biomes: "$ class'X2Condition_MapCheck'.default.DisallowedBiomes.Length $", Disallowed Plots: "$ class'X2Condition_MapCheck'.default.DisallowedPlots.Length $", Disallowed Parcels: "$ class'X2Condition_MapCheck'.default.DisallowedParcels.Length ,class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Biome: " $ BattleData.MapData.Biome,class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Plot Type: " $ PlotType ,class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Count: Disallowed Biomes: "$ class'X2Condition_MapCheck'.default.DisallowedBiomes.Length $", Disallowed Plots: "$ class'X2Condition_MapCheck'.default.DisallowedPlots.Length $", Disallowed Parcels: "$ class'X2Condition_MapCheck'.default.DisallowedParcels.Length ,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Biome: " $ BattleData.MapData.Biome,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Plot Type: " $ PlotType ,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
 
 	if (class'X2Condition_MapCheck'.default.DisallowedBiomes.Length > 0)
 		if (class'X2Condition_MapCheck'.default.DisallowedBiomes.Find(BattleData.MapData.Biome) != INDEX_NONE)
@@ -170,63 +156,77 @@ static function bool DoesGeneratedMissionHaveInvalidMap(XComGameStateHistory His
 	return false;
 }
 
-// Adds additional maps to the game manually
-// TODO
-static function AddStreamingCinematicMaps()
-{
-	local string strCineMap;
-
-	foreach class'X2DownloadableContentInfo_WotC_SupportStrikes'.default.CinematicMaps(strCineMap)
-		`MAPS.AddStreamingMap(strCineMap, , , false).bForceNoDupe = true;
-}
-
 //
-// TODO: Fix this executing too early and executing multiple times in a mission (before the briefing is done)
+// When a unit spawned from the heli dies, remove the unit from the support strike tactical gamestate. We don't care about the EventSource (Killer) in this instance.
 //
-/*
-static function EventListenerReturn ShowSupportStrikeMessage(Object EventData, Object EventSource, XComGameState GameState, Name Event, Object CallbackData)
+static function EventListenerReturn RemoveFromStrikeManager(Object EventData, Object EventSource, XComGameState GameState, Name Event, Object CallbackData)
 {
 	local XComGameStateHistory								History;
-	local XComGameState_HeadquartersXCom					XComHQ;
-	local XComPresentationLayer								Pres;
-	local TDialogueBoxData									kData;
-	local XComGameState_Player								PlayerState;
+	local XComGameState										NewGameState;
+	local XComGameState_Unit								KilledUnit;
+	local XComGameState_SupportStrikeManager				SupportStrikeMgr;
+	local XComGameState_SupportStrike_Tactical				StrikeTactical;
+	local UnitValue											Value;
 
-	PlayerState = XComGameState_Player(EventData);
+	KilledUnit = XComGameState_Unit(EventData);
 
-	if( PlayerState.TeamFlag != eTeam_XCom && PlayerState.PlayerTurnCount != 1)
+	if (KilledUnit == none)
+		return ELR_NoInterrupt;
+
+	// TQL/Skirmish/Ladder/Challenge Mode Does not have the manager installed
+	if ( class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true) )
 		return ELR_NoInterrupt;
 
 	History = `XCOMHISTORY;
-	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
-	Pres = `PRES;
 
-	if (XComHQ.GetGenericKeyValue("SupportStrike_InvalidLocation") > -1)
-	{
-		// Report to the player that the site is invalid for support strikes
-		kData.eType     = eDialog_Alert;
-		kData.strTitle  = class'UIAlert_SupportStrikes'.default.strTitle_Error_StrikeNotAvaliable;
-		kData.strText   = class'UIAlert_SupportStrikes'.default.strDesc_Reason_MissionSiteInvalid;
-		kData.strAccept = Pres.m_strOK;
+	//Get our support strike tactical XCGS ready
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+	StrikeTactical = XComGameState_SupportStrike_Tactical(History.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
 
-		Pres.UIRaiseDialog( kData );	
-
+	if (StrikeTactical == none)
 		return ELR_NoInterrupt;
-	}
 
-	// TODO: Try to make this cleaner 
-	if (	(XComHQ.GetGenericKeyValue("SupportStrike_Space_Orbital") > -1)	 ||
-			(XComHQ.GetGenericKeyValue("SupportStrike_Arty_Mortar_SMK") > -1) ||
-			(XComHQ.GetGenericKeyValue("SupportStrike_Arty_Mortar_HE") > -1)	)
+	if (KilledUnit.TacticalTag != StrikeTactical.TacticalTag)
+		return ELR_NoInterrupt;
+
+	// Create a new gamestate since something will be modified
+	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("SupportStrike_Tactical.KillMail()");
+
+	StrikeTactical = XComGameState_SupportStrike_Tactical(NewGameState.ModifyStateObject(class'XComGameState_SupportStrike_Tactical', StrikeTactical.ObjectID));
+
+	// Retrieve the unit value from the unit
+	KilledUnit.GetUnitValue(StrikeTactical.UVIndexName, Value);
+
+	//Remove the element from the array
+	StrikeTactical.XComResistanceRNFIDs.Remove(int(Value.fValue), 1);
+	StrikeTactical.CosmeticResistanceRNFIDs.Remove(int(Value.fValue), 1);
+
+
+
+	// If something happened, submit gamestate
+	// Otherwise, clean up the gamestate
+	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-			Pres.UITutorialBox( class'UIAlert_SupportStrikes'.default.strTitle_Ready_StrikeAvaliable, 
-				class'UIAlert_SupportStrikes'.default.strDesc_Ready_StrikeAvaliable, "" );
+		`LOG("[" $ GetFuncName() $ "] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
+		`TACTICALRULES.SubmitGameState(NewGameState);
+	}
+	else
+	{
+		History.CleanupPendingGameState(NewGameState);
 	}
 
 	return ELR_NoInterrupt;
-}
-*/
 
+}
+
+static function AddStreamingCinematicMaps(XComGameState_SupportStrike_Tactical StrikeTactical)
+{
+	local string strCineMap;
+
+	foreach StrikeTactical.default.CinematicMaps(strCineMap)
+		`MAPS.AddStreamingMap(strCineMap, , , false).bForceNoDupe = true;
+}
+/*
 static function EventListenerReturn LoadOnDemandHeliDropIn(Object EventData, Object EventSource, XComGameState GameState, Name Event, Object CallbackData)
 {
 	local XComGameStateHistory								History;
@@ -306,7 +306,8 @@ static function EventListenerReturn LoadOnDemandHeliDropIn(Object EventData, Obj
 
 	return ELR_NoInterrupt;
 }
-
+*/
+/*
 static function SpawnUnitsPreLoadSequence(XComGameState_Unit UnitStateSelf, XComGameState NewGameState)
 {
 	local XComGameState_Unit				SpawnedUnit;
@@ -401,11 +402,13 @@ static function SpawnUnitsPreLoadSequence(XComGameState_Unit UnitStateSelf, XCom
 
 	//Update FOW
 	`XWORLD.ForceUpdateAllFOWViewers( );
-}
 
+}
+	*/
 //
 // We need to create the visualization actor ahead of time, before the game has even started
 //
+/*
 static function CreateVisualizersForActors(StateObjectReference NewUnitRef, XComGameState NewGameState)
 {
 	local XComGameState_Unit Unit;
@@ -421,3 +424,4 @@ static function CreateVisualizersForActors(StateObjectReference NewUnitRef, XCom
 		XGUnit(Unit.GetVisualizer()).m_bForceHidden = true;
 	}
 }
+*/
