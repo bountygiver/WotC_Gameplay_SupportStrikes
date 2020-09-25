@@ -31,12 +31,10 @@ static function CHEventListenerTemplate CreateSupportStrikeStrategyListeners()
 static function EventListenerReturn OnViewStrategyPolicies(Object EventData, Object EventSource, XComGameState GameState, Name Event, Object CallbackData)
 {
 	local XComGameStateHistory					History;
-	local XComGameState_HeadquartersXCom		XComHQ;
 	local XComGameState							NewGameState;
 	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
 
 	History = `XCOMHISTORY;
-	XComHQ = class'UIUtilities_Strategy'.static.GetXComHQ();
 
 	// Create a new gamestate since something will be modified
 	NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("X2EventListener_SupportStrikes.OnTacticalBeginPlay");
@@ -45,13 +43,13 @@ static function EventListenerReturn OnViewStrategyPolicies(Object EventData, Obj
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
 
 	//Reset costs back to original values
-	SupportStrikeMgr.CurrentMonthAbilityIntelCost = SupportStrikeMgr.ScaledSupportStrikeCosts;
+	SupportStrikeMgr.StrikeCurrentMonthUsage = SupportStrikeMgr.StrikeOriginalMonthUsage;
 
 	// If something happened, submit gamestate
 	// Otherwise, clean up the gamestate
 	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-		`LOG("[OnViewStrategyPolicies()] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ GetFuncName() $ "] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
 		`XCOMGAME.GameRuleset.SubmitGameState(NewGameState);
 	}
 	else
