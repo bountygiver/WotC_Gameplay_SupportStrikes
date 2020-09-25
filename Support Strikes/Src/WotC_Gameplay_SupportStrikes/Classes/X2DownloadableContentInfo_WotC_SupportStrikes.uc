@@ -10,14 +10,14 @@ class X2DownloadableContentInfo_WotC_SupportStrikes extends X2DownloadableConten
 var config bool bLogAll;
 var config bool bLogErrors;
 var config bool bLogInform;
-var config bool bChaosMode;				//For those that want to turn the game into chaos
+var config bool bChaosMode;				//Chaos is restless
 
 var config array<name> GTSUnlocksTemp;
 
-var config array<string> CinematicMaps;
-
 var config		array<name>		arrAACodes;
 var localized	array<string>	arrAAStrings;
+
+var config		array<string>	CinematicMaps;
 
 //Simple logging function
 static function bool Log(optional bool bIsErrorMsg=false, optional bool bIsInformMsg=false)
@@ -59,8 +59,7 @@ static event InstallNewCampaign(XComGameState StartState)
 
 	// Add the manager class
 	StrikeMgr = XComGameState_SupportStrikeManager(StartState.CreateNewStateObject(class'XComGameState_SupportStrikeManager'));
-	`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID, Log(,true),'WotC_Gameplay_SupportStrikes');
-	`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.", Log(,true),'WotC_Gameplay_SupportStrikes');
+	StrikeMgr.SetUpSupportStrikeManager(StartState);
 }
 
 /// <summary>
@@ -70,31 +69,59 @@ static event OnPreMission(XComGameState NewGameState, XComGameState_MissionSite 
 {
 	local XComGameState_SupportStrikeManager SupportStrikeMgr;
 	
-
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
 
 	if (SupportStrikeMgr != none)
 	{
 		//Check what Support Strikes are purchased before missions
-		class'XComGameState_SupportStrikeManager'.static.OnPreMission(NewGameState);
+		class'XComGameState_SupportStrikeManager'.static.OnPreMission(NewGameState, SupportStrikeMgr);
 	}
 }
+
+/// <summary>
+/// Called when the player completes a mission while this DLC / Mod is installed.
+/// </summary>
+static event OnPostMission()
+{
+	//Re-init the Support Strike Manager
+	InitializeSupportStrikeManager();
+}
+
 
 /// <summary>
 /// Called after the player exits the post-mission sequence while this DLC / Mod is installed.
 /// </summary>
 static event OnExitPostMissionSequence()
 {
-	local XComGameState NewGameState;
-	local XComGameState_SupportStrikeManager SupportStrikeMgr;
+	local XComGameState							NewGameState;
+	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
+	local XComGameState_SupportStrike_Tactical	StrikeTactical;
 	
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
 
 	if (SupportStrikeMgr != none)
 	{
 		//Primary driver for removing Support Strikes post-mission
-		NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Support Strike: OnExitPostMissionSequence() Update");
+		NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Support Strike Manager: OnExitPostMissionSequence() Update");
 		class'XComGameState_SupportStrikeManager'.static.OnExitPostMissionSequence(NewGameState);
+
+		if (NewGameState.GetNumGameStateObjects() > 0)
+		{
+			`XCOMGAME.GameRuleset.SubmitGameState(NewGameState);
+		}
+		else
+		{
+			`XCOMHISTORY.CleanupPendingGameState(NewGameState);
+		}
+	}
+
+	StrikeTactical = XComGameState_SupportStrike_Tactical(`XCOMHISTORY.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
+
+	if (StrikeTactical != none)
+	{
+		//Primary driver for removing Support Strikes post-mission
+		NewGameState = class'XComGameStateContext_ChangeContainer'.static.CreateChangeState("Tactical Support Strike Object: OnExitPostMissionSequence() Update");
+		class'XComGameState_SupportStrike_Tactical'.static.OnExitPostMissionSequence(NewGameState);
 
 		if (NewGameState.GetNumGameStateObjects() > 0)
 		{
@@ -248,6 +275,7 @@ static function InitializeSupportStrikeManager()
 	local XComGameStateHistory History;
 	local XComGameState NewGameState;
 	local XComGameState_SupportStrikeManager StrikeMgr;
+	local name Template;
 
 	// Don't attempt to install a manager in TQL/Skirmish/Ladder/Challenge Mode
 	if ( class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true) )
@@ -261,17 +289,30 @@ static function InitializeSupportStrikeManager()
 	{
 		// Add the manager class
 		StrikeMgr = XComGameState_SupportStrikeManager(NewGameState.CreateNewStateObject(class'XComGameState_SupportStrikeManager'));
-		`LOG("[InitializeSupportStrikeManager()] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,Log(,true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ GetFuncName() $ "] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,Log(,true),'WotC_Gameplay_SupportStrikes');
+
+		// Create arrays for month
+		StrikeMgr.InitializeCurrentUsage();
+	}
+	else
+	{
+		`LOG("[" $ GetFuncName() $ "] Verifying Save: " ,Log(,true),'WotC_Gameplay_SupportStrikes');
+
+		//Verify data integrity
+		foreach StrikeMgr.PurchasedSupportStrikes(Template)
+		{
+			`LOG("[" $ GetFuncName() $ "] "$ Template,Log(,true),'WotC_Gameplay_SupportStrikes');
+		}
 	}
 
 	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-		`LOG("[InitializeSupportStrikeManager()] SUCCESS... Installed Support Strike Manager.",Log(,true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ GetFuncName() $ "] SUCCESS... Installed Support Strike Manager.",Log(,true),'WotC_Gameplay_SupportStrikes');
 		History.AddGameStateToHistory(NewGameState);
 	}
 	else
 	{
-		`LOG("[InitializeSupportStrikeManager()] Support Strike Manager was already installed.",Log(,true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ GetFuncName() $ "] Support Strike Manager was already installed.",Log(,true),'WotC_Gameplay_SupportStrikes');
 		History.CleanupPendingGameState(NewGameState);
 	}
 }
