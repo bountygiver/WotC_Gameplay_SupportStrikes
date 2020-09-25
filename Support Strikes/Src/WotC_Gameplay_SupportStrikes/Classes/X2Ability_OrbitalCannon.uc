@@ -253,6 +253,8 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage2(
 	Template.LostSpawnIncreasePerUse = default.IonCannon_LostSpawnIncreasePerUse;
 	Template.bFrameEvenWhenUnitIsHidden = true;
 
+	Template.AssociatedPlayTiming = SPT_AfterSequential;
+
 	return Template;
 }
 
@@ -285,7 +287,6 @@ static function IonCannon_Stage2_BuildVisualization(XComGameState VisualizeGameS
 	local X2Action_PlayEffect				EffectAction;
 	local Object							SFX;
 
-
 	VisMgr = `XCOMVISUALIZATIONMGR;
 	History = `XCOMHISTORY;
 
@@ -309,30 +310,30 @@ static function IonCannon_Stage2_BuildVisualization(XComGameState VisualizeGameS
 
 	if (SFX != none && SFX.IsA('SoundCue'))
 	{
-		SoundCueAction = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, Context));
+		SoundCueAction = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
 		SoundCueAction.SetSoundAndFlyOverParameters(SoundCue(SFX), "", '', eColor_Good);
 	}
 
 	// Pan camera towards target location
 	// NOTE: Look at is here to focus on the pretty particle effect BEFORE the projectile is fired
-    LookAtTargetAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(ActionMetadata, Context));
+    LookAtTargetAction = X2Action_CameraLookAt(class'X2Action_CameraLookAt'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
 	LookAtTargetAction.LookAtLocation = Context.InputContext.TargetLocations[0];
 	LookAtTargetAction.LookAtDuration = 13.00f;
 	LookAtTargetAction.SnapToFloor = false;
 	LookAtTargetAction.TargetZoomAfterArrival = 1.00f;
-
+	
 	//Delay the Beam effect until this time
-	DelayAction = X2Action_Delay( class'X2Action_Delay'.static.AddToVisualizationTree( ActionMetadata, Context ) );
+	DelayAction = X2Action_Delay( class'X2Action_Delay'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
 	DelayAction.Duration = 6.50f;
 
 	//Play the beam effect
-	EffectAction = X2Action_PlayEffect(class'X2Action_PlayEffect'.static.AddToVisualizationTree(ActionMetadata, Context));
+	EffectAction = X2Action_PlayEffect(class'X2Action_PlayEffect'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
 	EffectAction.EffectName = "FX_RenX_IonCannonStrike.ParticleSystems.P_Beam";
 	EffectAction.EffectLocation = Context.InputContext.TargetLocations[0];
 	EffectAction.bWaitForCompletion = false;
 
 	//Prevent the fire action from playing until this amount of time as passed
-	DelayAction = X2Action_Delay( class'X2Action_Delay'.static.AddToVisualizationTree( ActionMetadata, Context ) );
+	DelayAction = X2Action_Delay( class'X2Action_Delay'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
 	DelayAction.Duration = 2.00f;
 
 	//Iridar: Call the typical ability visuailzation. With just that, the ability would look like the soldier firing the rocket upwards, and then enemy getting damage for seemingly no reason.
@@ -348,7 +349,7 @@ static function IonCannon_Stage2_BuildVisualization(XComGameState VisualizeGameS
 
     if (FoundAction != none)
     {
-		DelayAction = X2Action_Delay( class'X2Action_Delay'.static.AddToVisualizationTree( ActionMetadata, Context, false, ActionMetadata.LastActionAdded ) );
+		DelayAction = X2Action_Delay( class'X2Action_Delay'.static.AddToVisualizationTree( ActionMetadata, Context, false, ActionMetadata.LastActionAdded) );
 		DelayAction.Duration = 2.00f;
 
 		EffectAction = X2Action_PlayEffect(class'X2Action_PlayEffect'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
