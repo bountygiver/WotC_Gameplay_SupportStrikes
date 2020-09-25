@@ -135,6 +135,7 @@ static event OnPostTemplatesCreated()
 {
 	AddAcademyUnlocks();
 	UpdateAbilityAvailabilityStrings();
+	class'X2Helpers_SupportStrikes'.static.OnPostCharacterTemplatesCreated();
 }
 
 // Setup Display Strings for new AbilityAvailabilityCodes (the localized strings that tell you why an ability fails a condition)
