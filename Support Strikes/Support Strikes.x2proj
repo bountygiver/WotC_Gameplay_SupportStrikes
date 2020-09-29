@@ -199,6 +199,9 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2EventListener_SupportStrikes_Tactical.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Helpers_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Item_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>

@@ -10,6 +10,8 @@ struct DLCAnimSetAdditions
 
 var config Array<DLCAnimSetAdditions> AnimSetAdditions;
 
+var config array<name>					AppendSupportStrikesCinematicToUnits;
+
 static function OnPostCharacterTemplatesCreated()
 {
 	local X2CharacterTemplateManager CharacterTemplateMgr;
@@ -29,6 +31,9 @@ static function OnPostCharacterTemplatesCreated()
 			{
 				SoldierTemplate.AdditionalAnimSets.AddItem(AnimSet(`CONTENT.RequestGameArchetype(default.AnimSetAdditions[ScanAdditions].AnimSet)));
 				SoldierTemplate.AdditionalAnimSetsFemale.AddItem(AnimSet(`CONTENT.RequestGameArchetype(default.AnimSetAdditions[ScanAdditions].FemaleAnimSet)));
+
+				//Append any Cinematic maps into the soldiers as well
+				//SoldierTemplate.strMatineePackages.AddItem("CIN_Vehicle_Aircraft_A10");
 			}
 		}
 	}
