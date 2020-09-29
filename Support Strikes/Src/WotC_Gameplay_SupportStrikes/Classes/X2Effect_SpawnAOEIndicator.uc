@@ -31,7 +31,7 @@ private function DoTargetFX(XComGameState_Effect TargetEffect, out Visualization
 	{
 		EffectAction = X2Action_PlayEffect(class'X2Action_PlayEffect'.static.AddToVisualizationTree(ActionMetadata, Context, false, ActionMetadata.LastActionAdded));
 
-		if (default.OverrideVFXPath != "")
+		if (OverrideVFXPath != "")
 			EffectAction.EffectName = OverrideVFXPath;
 		else
 			EffectAction.EffectName = default.VFXPath;
@@ -39,7 +39,7 @@ private function DoTargetFX(XComGameState_Effect TargetEffect, out Visualization
 		EffectAction.bStopEffect = bStopEffect;
 		EffectAction.EffectLocation = TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocations[0];
 
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] Applied Effect: " $ default.VFXPath $ " to world.", bStopEffect && class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,false) ,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] Applied Effect: " $ EffectAction.EffectName $ " to world.", bStopEffect && class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,false) ,'WotC_Gameplay_SupportStrikes');
 	}
 	else
 	{
