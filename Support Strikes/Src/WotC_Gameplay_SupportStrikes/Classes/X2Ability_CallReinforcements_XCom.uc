@@ -128,7 +128,7 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stage1(
 	//  Spawn the spinny circle doodad
 	FXEffect = new class'X2Effect_SpawnAOEIndicator';
 	FXEffect.BuildPersistentEffect(default.HeliDropIn_Delay_Turns, false, false, false, eGameRule_PlayerTurnBegin);
-	FXEffect.OverrideVFXPath = "FX_Evac_Zone.P_Evac_Zone_Flare_Ring";
+	FXEffect.OverrideVFXPath = "XV_SupportStrike_ParticleSystems.ParticleSystems.P_Evac_Zone_Flare_Ring_Green";
 	Template.AddShooterEffect(FXEffect);
 
 	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
