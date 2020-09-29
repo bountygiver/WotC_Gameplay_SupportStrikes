@@ -50,7 +50,7 @@ function InitializeGameState(XComGameState StartState)
 function CreateRNFSoldiers(XComGameState StartState)
 {
 	local int								Index, RandomChar;
-	local XComDropTrooperData				EmptyData;
+	local XComDropTrooperData				EmptyData, PilotData;
 	local XComGameState_Unit				NewSoldierState, CharPoolUnitState;
 	local X2CharacterTemplate				CharacterTemplate;
 	local XComGameState_HeadquartersAlien	AlienHQ;
@@ -60,7 +60,7 @@ function CreateRNFSoldiers(XComGameState StartState)
 	AlienHQ = XComGameState_HeadquartersAlien(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersAlien'));
 	CharTemplateMgr = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager();	
 
-	// Choose a XComDropTrooperData struct
+	// Choose a XComDropTrooperData struct for the first time
 	if (!default.GenerateRandomCharacter && PreGenData.CharacterTemplate.Length == 0)
 	{
 		if (class'X2Helper_SpawnUnit'.default.arrSpawnUnitData.Length > 0)
@@ -88,14 +88,11 @@ function CreateRNFSoldiers(XComGameState StartState)
 		XComResistanceRNFIDs.AddItem(NewSoldierState.GetReference());
 	}
 
-//	//Clear data
-//	PreGenData = EmptyData;
-
 	// Choose a XComDropTrooperData struct for the pilots
 	if (!default.GenerateRandomCharacter)
 	{
 		if (class'X2Helper_SpawnUnit'.default.arrSpawnUnitData.Length > 0)
-			PreGenData = class'X2Helper_SpawnUnit'.static.PickBestDataSet(0, true);
+			PilotData = class'X2Helper_SpawnUnit'.static.PickBestDataSet(0, true);
 		else
 			`LOG("[" $ GetFuncName() $ "] ERROR, No DataSet exists! Creating random pilot!",, 'WotC_Strategy_SupportStrikes');
 	}
@@ -110,19 +107,19 @@ function CreateRNFSoldiers(XComGameState StartState)
 		RandomChar = -1;
 
 		//Roll a soldier at random if there's more than x elements, and pop the data out
-		if (PreGenData.CharacterTemplate.Length > default.MaxPilots)
-			RandomChar = `SYNC_RAND(0, PreGenData.CharacterTemplate.Length);
+		if (PilotData.CharacterTemplate.Length > default.MaxPilots)
+			RandomChar = `SYNC_RAND(0, PilotData.CharacterTemplate.Length);
 		else
 			RandomChar = 0;	//We start at the next index then pop it off once done
 
-		CharacterTemplate = CharTemplateMgr.FindCharacterTemplate(PreGenData.CharacterTemplate[RandomChar].TemplateName);
+		CharacterTemplate = CharTemplateMgr.FindCharacterTemplate(PilotData.CharacterTemplate[RandomChar].TemplateName);
 		
 		NewSoldierState = CharacterTemplate.CreateInstanceFromTemplate(StartState);
 
 		//There is nothing to create
-		if (default.GenerateRandomCharacter || PreGenData.CharacterTemplate[RandomChar].CharacterPoolName == "")
+		if (default.GenerateRandomCharacter || PilotData.CharacterTemplate[RandomChar].CharacterPoolName == "")
 		{
-				CharacterGeneratorResult = GenerateRandomResult(PreGenData.CharacterTemplate[RandomChar].TemplateName);
+				CharacterGeneratorResult = GenerateRandomResult(PilotData.CharacterTemplate[RandomChar].TemplateName);
 
 				NewSoldierState.SetTAppearance(CharacterGeneratorResult.kAppearance);
 				NewSoldierState.SetCharacterName(CharacterGeneratorResult.strFirstName, CharacterGeneratorResult.strLastName, CharacterGeneratorResult.strNickName);
@@ -134,13 +131,13 @@ function CreateRNFSoldiers(XComGameState StartState)
 		else
 		{
 			//We're overriding the original created state, instead put it on a temporary unit
-			CharPoolUnitState = `CHARACTERPOOLMGR.GetCharacter(PreGenData.CharacterTemplate[RandomChar].CharacterPoolName);
+			CharPoolUnitState = `CHARACTERPOOLMGR.GetCharacter(PilotData.CharacterTemplate[RandomChar].CharacterPoolName);
 
 			// If the temp state is blank, generate a new character over our old state
 			if (CharPoolUnitState == none)
 			{
-				`LOG("[" $ GetFuncName() $ "] Character: " $ PreGenData.CharacterTemplate[RandomChar].CharacterPoolName $ " Not found. Generating new character",, 'WotC_Strategy_SupportStrikes');
-				CharacterGeneratorResult = GenerateRandomResult(PreGenData.CharacterTemplate[RandomChar].TemplateName);
+				`LOG("[" $ GetFuncName() $ "] Character: " $ PilotData.CharacterTemplate[RandomChar].CharacterPoolName $ " Not found. Generating new character",, 'WotC_Strategy_SupportStrikes');
+				CharacterGeneratorResult = GenerateRandomResult(PilotData.CharacterTemplate[RandomChar].TemplateName);
 
 				NewSoldierState.SetTAppearance(CharacterGeneratorResult.kAppearance);
 				NewSoldierState.SetCharacterName(CharacterGeneratorResult.strFirstName, CharacterGeneratorResult.strLastName, CharacterGeneratorResult.strNickName);
@@ -170,15 +167,15 @@ function CreateRNFSoldiers(XComGameState StartState)
 		Pilots.AddItem(NewSoldierState.GetReference());
 
 		//Pop off the data
-		if (!default.GenerateRandomCharacter && PreGenData.CharacterTemplate.Length > 0)
+		if (!default.GenerateRandomCharacter && PilotData.CharacterTemplate.Length > 0)
 		{
-			PreGenData.CharacterTemplate.Remove(RandomChar, 1);
+			PilotData.CharacterTemplate.Remove(RandomChar, 1);
 		}
 	}
 	`LOG("[" $ GetFuncName() $ "]  ------------------------------------------------------------------------------------------------------------------------" ,, 'WotC_Strategy_SupportStrikes');
 
 	//Clear data
-	PreGenData = EmptyData;
+	PilotData = EmptyData;
 }
 
 // Given a XComGameState_Unit, makes a complete copy of the unit including weapons
@@ -199,7 +196,7 @@ function FillRNFSoldiers(XComGameState StartState)
 	local int								Range, i;
 	local XComGameState_Unit				NewSoldierState;
 	local XComGameState_HeadquartersAlien	AlienHQ;
-	local XComDropTrooperData				EmptyData;
+	local XComDropTrooperData				ChosenData;
 
 	AlienHQ = XComGameState_HeadquartersAlien(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersAlien'));
 
@@ -207,11 +204,17 @@ function FillRNFSoldiers(XComGameState StartState)
 	// Both are checked to ensure that the arrays have the same exact length
 	if ( (XComResistanceRNFIDs.Length < default.MaxPreGenSoldiers) && (CosmeticResistanceRNFIDs.Length < default.MaxPreGenSoldiers) )
 	{
-		// Choose a XComDropTrooperData struct
+		// Choose a XComDropTrooperData struct, there's a chance that the Force Level updated while we're on mission
 		if (!default.GenerateRandomCharacter && PreGenData.CharacterTemplate.Length == 0)
 		{
 			if (class'X2Helper_SpawnUnit'.default.arrSpawnUnitData.Length > 0)
-				PreGenData = class'X2Helper_SpawnUnit'.static.PickBestDataSet(AlienHQ.GetForceLevel());
+			{
+				ChosenData = class'X2Helper_SpawnUnit'.static.PickBestDataSet(AlienHQ.GetForceLevel());
+
+				//Test if it matches our current soldier data, if so discard and continue
+				if (PreGenData.UniqueID != ChosenData.UniqueID)
+					PreGenData = ChosenData;
+			}
 			else
 				`LOG("[" $ GetFuncName() $ "] ERROR, No DataSet exists! Creating random trooper!",, 'WotC_Strategy_SupportStrikes');
 		}
@@ -231,9 +234,6 @@ function FillRNFSoldiers(XComGameState StartState)
 			XComResistanceRNFIDs.AddItem(NewSoldierState.GetReference());
 		}
 	}
-
-	//Clear data
-	PreGenData = EmptyData;
 }
 
 // Every month repopulate the arrays
@@ -242,7 +242,7 @@ function UpdateRNFSoldiers(XComGameState StartState)
 	local int								Index;
 	local XComGameState_Unit				NewSoldierState;
 	local XComGameState_HeadquartersAlien	AlienHQ;
-	local XComDropTrooperData				EmptyData;
+	local XComDropTrooperData				ChosenData;
 
 	AlienHQ = XComGameState_HeadquartersAlien(`XCOMHISTORY.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersAlien'));
 
@@ -250,7 +250,11 @@ function UpdateRNFSoldiers(XComGameState StartState)
 	if (!default.GenerateRandomCharacter && PreGenData.CharacterTemplate.Length == 0)
 	{
 		if (class'X2Helper_SpawnUnit'.default.arrSpawnUnitData.Length != 0)
-			PreGenData = class'X2Helper_SpawnUnit'.static.PickBestDataSet(AlienHQ.GetForceLevel());
+			ChosenData = class'X2Helper_SpawnUnit'.static.PickBestDataSet(AlienHQ.GetForceLevel());
+
+			//Test if it matches our current soldier data, if so discard and continue
+			if (PreGenData.UniqueID != ChosenData.UniqueID)
+				PreGenData = ChosenData;
 		else
 			`LOG("[" $ GetFuncName() $ "] ERROR, No DataSet exists! Creating random trooper!",, 'WotC_Strategy_SupportStrikes');
 	}
@@ -269,9 +273,6 @@ function UpdateRNFSoldiers(XComGameState StartState)
 		//Finally store the reference to the RNF ID array
 		XComResistanceRNFIDs.AddItem(NewSoldierState.GetReference());
 	}
-
-	//Clear data
-	PreGenData = EmptyData;
 }
 
 function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, int ForceLevel)
@@ -281,17 +282,26 @@ function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, i
 	local X2CharacterTemplate				CharacterTemplate;
 	local name								CharacterTemplateName;
 	local TSoldier							CharacterGeneratorResult;
+	local bool								GenerateRandomCharacters;
 
-	RandomChar = -1;
+	RandomChar = 0;	//We start at the 0th index
 
-	//Roll a soldier at random if there's more than 4 elements, and pop the data out
-	if (PreGenData.CharacterTemplate.Length > default.MaxPreGenSoldiers)
-		RandomChar = `SYNC_RAND(0, PreGenData.CharacterTemplate.Length);
+	//If the generate random character boolean is set, or we have no more units to pick from the dataset, then toggle the boolean
+	if (default.GenerateRandomCharacter || PreGenData.CharacterTemplate.Length == 0)
+		GenerateRandomCharacters = true;
 	else
-		RandomChar = 0;	//We start at the next index then pop it off once done
+	{
+		GenerateRandomCharacters = false;
+
+		RandomChar = -1;
+
+		//Roll a soldier at random if there's more than 4 elements, and pop the data out
+		if (PreGenData.CharacterTemplate.Length > default.MaxPreGenSoldiers)
+			RandomChar = `SYNC_RAND(PreGenData.CharacterTemplate.Length);
+	}
 
 	// If our template name is blank from the dataset, then just create a XCom Soldier
-	if(PreGenData.CharacterTemplate[RandomChar].TemplateName == '' || default.GenerateRandomCharacter)
+	if(PreGenData.CharacterTemplate[RandomChar].TemplateName == '' || GenerateRandomCharacters)
 	{
 		CharacterTemplateName = 'Soldier';
 		CharacterTemplate = class'X2CharacterTemplateManager'.static.GetCharacterTemplateManager().FindCharacterTemplate(CharacterTemplateName);
@@ -303,7 +313,7 @@ function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, i
 	NewSoldierState = CharacterTemplate.CreateInstanceFromTemplate(NewGameState);
 	
 	//Create a random soldier if the character pool name is empty or the player prefers the character pool instead
-	if (PreGenData.CharacterTemplate[RandomChar].CharacterPoolName == "" || default.GenerateRandomCharacter)
+	if (PreGenData.CharacterTemplate[RandomChar].CharacterPoolName == "" || GenerateRandomCharacters)
 	{
 		CharacterGeneratorResult = GenerateRandomResult(PreGenData.CharacterTemplate[RandomChar].TemplateName);
 
@@ -348,8 +358,9 @@ function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, i
 	//
 	NewSoldierState.ApplyInventoryLoadout(NewGameState);
 	
-	// Swap weapons after applying loadout.
-	class'X2Helper_SpawnUnit'.static.ChangeEquipment(PreGenData.CharacterTemplate[RandomChar], NewSoldierState, NewGameState, false);
+	// Swap weapons after applying loadout. Only applies to custom units defined the dataset
+	if (!GenerateRandomCharacters)
+		class'X2Helper_SpawnUnit'.static.ChangeEquipment(PreGenData.CharacterTemplate[RandomChar], NewSoldierState, NewGameState, false);
 	
 	//
 	/*	Options	*/
@@ -357,7 +368,7 @@ function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, i
 	NewSoldierState.bMissionProvided = true;
 
 	//Pop off the data
-	if (!default.GenerateRandomCharacter && PreGenData.CharacterTemplate.Length > 0)
+	if (!GenerateRandomCharacters && PreGenData.CharacterTemplate.Length > 0)
 	{
 		PreGenData.CharacterTemplate.Remove(RandomChar, 1);
 	}

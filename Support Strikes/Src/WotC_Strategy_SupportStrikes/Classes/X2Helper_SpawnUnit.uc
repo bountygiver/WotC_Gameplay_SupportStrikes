@@ -17,6 +17,7 @@ struct SpawnCharacterData
 
 struct XComDropTrooperData
 {
+	var name UniqueID;
 	var bool bSequential;			// If false, it's randomly picked
 	var bool bIsPilot;				// Special case for Matinee
 	var array<SpawnCharacterData> CharacterTemplate;
@@ -27,6 +28,7 @@ struct XComDropTrooperData
 
 	structdefaultproperties
 	{
+		UniqueID = 'Undefined';
 		AlertLevel = 0;
 		MinForceLevel = 0;
 		MaxForceLevel = 0;
