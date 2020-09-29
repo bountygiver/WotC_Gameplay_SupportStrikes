@@ -85,8 +85,8 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stage1(
 	Template.AbilityMultiTargetStyle = MultiTarget;
 
 	CursorTarget = new class'X2AbilityTarget_Cursor';
-	CursorTarget.FixedAbilityRange = default.HeliDropIn_CastRange;
-	CursorTarget.bRestrictToSquadsightRange = default.HeliDropIn_SquadSightRange;
+//	CursorTarget.FixedAbilityRange = default.HeliDropIn_CastRange;
+//	CursorTarget.bRestrictToSquadsightRange = default.HeliDropIn_SquadSightRange;
 	Template.AbilityTargetStyle = CursorTarget;
 
 	Template.AbilityTriggers.AddItem(default.PlayerInputTrigger);
