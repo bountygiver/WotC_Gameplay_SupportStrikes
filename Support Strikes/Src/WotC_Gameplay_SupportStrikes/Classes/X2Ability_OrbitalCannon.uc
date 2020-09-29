@@ -257,7 +257,7 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage2(
 
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 	Template.BuildVisualizationFn = IonCannon_Stage2_BuildVisualization;
-	//Template.MergeVisualizationFn = Mortar_Stage2_MergeVisualization;
+	Template.BuildInterruptGameStateFn = None; // This ability cannot be interrupted
 //	Template.CinescriptCameraType = "Archon_BlazingPinions_Stage2";
 
 	Template.LostSpawnIncreasePerUse = default.IonCannon_LostSpawnIncreasePerUse;

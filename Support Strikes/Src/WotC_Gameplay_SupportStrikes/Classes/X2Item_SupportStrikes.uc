@@ -37,7 +37,7 @@ static function array<X2DataTemplate> CreateTemplates()
 
 	Weapons.AddItem(CreateSupport_Air_Defensive_HeliDropIn_T1_WPN());
 
-//	Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN());
+	Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN());
 //	Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN_Strike());
 
 	Weapons.AddItem(CreateSupport_Space_Offensive_OrbitalStrike_IonCannon_T1_WPN());
@@ -64,7 +64,7 @@ static function X2DataTemplate CreateSupport_Land_Offensive_MortarStrike_HE_T1_W
 	Template.iEnvironmentDamage = default.MortarStrike_HE_T1_EnvDamage;
 	Template.iRadius = default.MortarStrike_HE_T1_Radius;
 	Template.iRange = 9999;
-	Template.iPhysicsImpulse = 5;
+	Template.iPhysicsImpulse = 30;
 //	Template.DamageTypeTemplateName = 'NoFireExplosion';
 
 	Template.InventorySlot = eInvSlot_Utility;
@@ -171,13 +171,13 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WP
 	Template.iClipSize = default.StrafingRun_A10_T1_Quanitity;
 	Template.iSoundRange = 0;
 	Template.iEnvironmentDamage = default.StrafingRun_A10_T1_EnvDamage;
-	Template.iRadius = 3;
+	Template.iRadius = default.StrafingRun_A10_T1_Radius;
 	Template.iIdealRange = default.StrafingRun_A10_T1_Range;
-	Template.iRange = 25;
+//	Template.iRange = 25;
 
 	//	This range determines the targeting line length
-	Template.iRange = 25;
-	Template.iPhysicsImpulse = 5;
+	Template.iRange = 9999;
+	Template.iPhysicsImpulse = 65;
 //	Template.DamageTypeTemplateName = 'NoFireExplosion';
 
 	Template.InventorySlot = eInvSlot_Utility;
@@ -215,7 +215,7 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WP
 	Template.iRadius = default.StrafingRun_A10_T1_Radius;
 
 	//	This range determines the targeting line length
-	Template.iRange = 10;
+	Template.iRange = 9999;
 	Template.iPhysicsImpulse = 5;
 //	Template.DamageTypeTemplateName = 'NoFireExplosion';
 
@@ -251,7 +251,7 @@ static function X2DataTemplate CreateSupport_Space_Offensive_OrbitalStrike_IonCa
 	Template.iEnvironmentDamage = default.IonCannon_T1_EnvDamage;
 	Template.iRadius = default.IonCannon_T1_Radius;
 	Template.iRange = 9999;
-	Template.iPhysicsImpulse = 5;
+	Template.iPhysicsImpulse = 55;
 //	Template.DamageTypeTemplateName = 'NoFireExplosion';
 
 	Template.InventorySlot = eInvSlot_Utility;

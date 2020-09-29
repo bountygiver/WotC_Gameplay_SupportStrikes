@@ -6,9 +6,13 @@ class X2Action_Fire_StrafingRun_A10 extends X2Action_Fire config(GameData);
 var config array<float> ProjectileTimeDelaySecArray;
 var config string		ProjectileLoopingFireSound;
 
-var int Offset;
+var int OffsetX;
+var int OffsetY;
 
 var Object SFX;
+
+// Fill this out so that the wait action can delay it by this number
+var float TimeToImpact;
 
 //Cached info for the unit performing the action
 //*************************************
@@ -43,7 +47,7 @@ function NotifyTargetsAbilityApplied()
 	ProjectileHit = true;
 }
 
-function AddProjectiles(int ProjectileIndex, int InputOffset)
+function AddProjectiles(int ProjectileIndex, int InputOffsetX, int InputOffsetY)
 {
 	local TTile SourceTile;
 	local XComWorldData World;
@@ -56,7 +60,17 @@ function AddProjectiles(int ProjectileIndex, int InputOffset)
 	// Move it above the top level of the world a bit with *2
 	ZValue = World.WORLD_FloorHeightsPerLevel * World.WORLD_TotalLevels * 2;
 
-	ImpactLocation = AbilityContext.InputContext.TargetLocations[ProjectileIndex];
+	// Unfortunately there's only a single used tile, the center
+	
+	ImpactLocation = AbilityContext.InputContext.TargetLocations[0];
+
+	// Apply an apt offset
+	ImpactLocation.X += World.WORLD_StepSize * InputOffsetX;
+	ImpactLocation.Y += World.WORLD_StepSize * InputOffsetY;
+
+	`LOG("[X2Action_Fire_StrafingRun_A10::" $ GetFuncName() $ "] Impact Location: [" $ ImpactLocation.X $ ", "  $ ImpactLocation.Y $ ", " $ ImpactLocation.Z $ "], Rotation: [" $ 
+	Rotator(ImpactLocation).Pitch $ ", "  $ Rotator(ImpactLocation).Yaw $ ", " $ Rotator(ImpactLocation).Roll $ "]" ,, 'WotC_Gameplay_SupportStrikes');
+
 
 	// Calculate the upper z position for the projectile
 	SourceTile = World.GetTileCoordinatesFromPosition(ImpactLocation);
@@ -66,9 +80,11 @@ function AddProjectiles(int ProjectileIndex, int InputOffset)
 	SourceTile.Z = ZValue;
 	SourceLocation = World.GetPositionFromTileCoordinates(SourceTile);
 
-	SourceLocation.X += World.WORLD_StepSize * InputOffset;
-	SourceLocation.Y += World.WORLD_StepSize * InputOffset;
-
+	//SourceLocation.X = ImpactLocation.X;
+	//SourceLocation.Y = ImpactLocation.Y;
+	
+	`LOG("[X2Action_Fire_StrafingRun_A10::" $ GetFuncName() $ "] Source Location: [" $ SourceLocation.X $ ", "  $ SourceLocation.Y $ ", " $ SourceLocation.Z $ "], Rotation: [" $ 
+	Rotator(SourceLocation).Pitch $ ", "  $ Rotator(SourceLocation).Yaw $ ", " $ Rotator(SourceLocation).Roll $ "]" ,, 'WotC_Gameplay_SupportStrikes');
 
 	Unit.AddBlazingPinionsProjectile(SourceLocation, ImpactLocation, AbilityContext);
 
@@ -84,8 +100,6 @@ Begin:
 
 	Unit.CurrentFireAction = self;
 
-	Offset = `SYNC_RAND(10 , 12);
-
 	//Play sound first before the actual loop
 	SFX = `CONTENT.RequestGameArchetype(ProjectileLoopingFireSound);
 
@@ -94,10 +108,13 @@ Begin:
 
 	for( TimeDelayIndex = 0; TimeDelayIndex < ProjectileTimeDelaySecArray.Length; ++TimeDelayIndex )
 	{
+		OffsetX = `SYNC_RAND(-6 , 6);
+		OffsetY = `SYNC_RAND(-6 , 6);
+
 		//Sleep before firing next projectile
 		Sleep(ProjectileTimeDelaySecArray[TimeDelayIndex] + GetDelayModifier());
 
-		AddProjectiles(TimeDelayIndex, Offset);
+		AddProjectiles(TimeDelayIndex, OffsetX, OffsetY);
 	}
 
 	while (!ProjectileHit)
@@ -115,9 +132,6 @@ Begin:
 
 function float GetDelayModifier()
 {
-//	Commented out until I figure out a way for it to play nice with Zip mode
-//	if( ShouldPlayZipMode() || ZombieMode() )
-//		return class'X2TacticalGameRuleset'.default.ZipModeDelayModifier;
-//	else
-		return `SYNC_FRAND(-.2, .3);
+	// No delay
+	return 0.0f;
 }

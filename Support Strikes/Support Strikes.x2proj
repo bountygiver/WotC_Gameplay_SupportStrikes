@@ -136,6 +136,9 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Fire_StrafingRun_A10.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Matinee_A10.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_Matinee_LittleBird.uc">
       <SubType>Content</SubType>
     </Content>

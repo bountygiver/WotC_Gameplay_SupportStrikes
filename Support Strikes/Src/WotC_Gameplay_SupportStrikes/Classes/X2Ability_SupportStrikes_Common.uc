@@ -1,8 +1,16 @@
 class X2Ability_SupportStrikes_Common extends X2Ability config (GameData);
 
+struct MatineeFireInfo
+{
+	var string	Prefix;
+	var float	FireTime;
+};
+
 var config string HexColor_Good;
 var config string HexColor_Caution;
 var config string HexColor_Bad;
+
+var config array<MatineeFireInfo> A10_MatineeCommentPrefixes;
 
 static function bool TypicalSupportStrike_AlternateFriendlyName(out string AlternateDescription, XComGameState_Ability AbilityState, StateObjectReference TargetRef)
 {
