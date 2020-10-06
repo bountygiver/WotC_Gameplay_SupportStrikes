@@ -27,6 +27,9 @@ var config int HeliDropIn_T1_EnvDamage;
 var config int HeliDropIn_T1_Radius;
 var config int HeliDropIn_T1_Quanitity;
 
+//Should not have a damage value for heli drop in
+var config int Recon_T1_Quanitity;
+
 static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Weapons;
@@ -36,6 +39,8 @@ static function array<X2DataTemplate> CreateTemplates()
 	Weapons.AddItem(CreateSupport_Land_Defensive_MortarStrike_SMK_T1_WPN());
 
 	Weapons.AddItem(CreateSupport_Air_Defensive_HeliDropIn_T1_WPN());
+
+//	Weapons.AddItem(CreateSupport_Air_Defensive_Recon_T1_WPN());
 
 	Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN());
 //	Weapons.AddItem(CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN_Strike());
@@ -129,7 +134,7 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_WPN()
 	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
 
 	Template.RangeAccuracy = class'X2Item_DefaultWeapons'.default.FLAT_CONVENTIONAL_RANGE;
-	Template.BaseDamage = default.HeliDropIn_T1_BaseDamage;
+//	Template.BaseDamage = default.HeliDropIn_T1_BaseDamage;
 	Template.iClipSize = default.HeliDropIn_T1_Quanitity;
 //	Template.iClipSize = 2;
 	Template.iSoundRange = 0;
@@ -152,7 +157,38 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_WPN()
 	return Template;
 }
 
+static function X2DataTemplate CreateSupport_Air_Defensive_Recon_T1_WPN()
+{
+	local X2WeaponTemplate Template;
 
+	`CREATE_X2TEMPLATE(class'X2WeaponTemplate', Template, 'Support_Airborne_Defensive_Recon_T1');
+	
+	Template.WeaponPanelImage = "_ConventionalRifle";                       // used by the UI. Probably determines iconview of the weapon.
+	Template.ItemCat = 'weapon';
+	Template.WeaponCat = 'support_strike';
+	Template.WeaponTech = 'conventional';
+	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
+
+	Template.RangeAccuracy = class'X2Item_DefaultWeapons'.default.FLAT_CONVENTIONAL_RANGE;
+	Template.iClipSize = default.Recon_T1_Quanitity;
+//	Template.iClipSize = 2;
+	Template.iSoundRange = 0;
+	Template.iRange = 9999;
+	Template.iPhysicsImpulse = 0;
+//	Template.DamageTypeTemplateName = 'NoFireExplosion';
+
+	Template.InventorySlot = eInvSlot_Utility;
+	Template.Abilities.AddItem('Ability_Support_Airborne_Def_Recon_T1_Stage1');
+	Template.Abilities.AddItem('Ability_Support_Airborne_Def_Recon_T1_Stage2');
+
+	// This all the resources; sounds, animations, models, physics, the works.
+	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_HeliDropIn_CV";
+
+	// Requirements
+	Template.Requirements.SpecialRequirementsFn = No;
+
+	return Template;
+}
 
 static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WPN()
 {
