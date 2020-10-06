@@ -112,7 +112,7 @@ function bool ReconEffectTicked(X2Effect_Persistent PersistentEffect, const out 
 	}
 
 	// Update The Effect State with new position
-	TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocation[0] = `XWORLD.GetPositionFromTileCoordinates(UnitState.TileLocation);
+	//kNewEffectState.ApplyEffectParameters.AbilityInputContext.TargetLocation[0] = `XWORLD.GetPositionFromTileCoordinates(UnitState.TileLocation);
 
 	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Perk is still active for " $ kNewEffectState.iTurnsRemaining, , 'WotC_Gameplay_SupportStrikes');
 	return false; // effect persists
@@ -143,7 +143,7 @@ simulated function AddX2ActionsForVisualization(XComGameState VisualizeGameState
 	PlayEffectAction.AttachToUnit = true;
 	PlayEffectAction.EffectName = PFX;
 	PlayEffectAction.EffectScale = PFXScale;
-	PlayEffectAction.EffectLocation = TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocation[0];
+//	PlayEffectAction.EffectLocation = TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocation[0];
 //	PlayEffectAction.AttachToSocketName = 'CIN_Root';
 //	PlayEffectAction.AttachToSocketsArrayName = 'BoneSocketActor';
 	PlayEffectAction.bWaitForCompletion = false;
