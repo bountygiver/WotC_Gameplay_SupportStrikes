@@ -142,7 +142,6 @@ static event OnExitPostMissionSequence()
 static event OnLoadedSavedGame()
 {
 	InitializeSupportStrikeManager();
-	RemoveItemsFromHQ();
 }
 
 /// <summary>
@@ -151,7 +150,6 @@ static event OnLoadedSavedGame()
 static event OnLoadedSavedGameToStrategy()
 {
 	InitializeSupportStrikeManager();
-	RemoveItemsFromHQ();
 }
 
 //
@@ -224,7 +222,7 @@ static function AddAcademyUnlocks()
 }
 
 // Transition patch to slowly remove items from the game
-
+/*
 static function RemoveItemsFromHQ()
 {
 	local XComGameStateHistory					History;
@@ -269,7 +267,7 @@ static function RemoveItemsFromHQ()
 		History.CleanupPendingGameState(NewGameState);
 	}
 }
-
+*/
 static function InitializeSupportStrikeManager()
 {
 	local XComGameStateHistory History;
@@ -289,30 +287,30 @@ static function InitializeSupportStrikeManager()
 	{
 		// Add the manager class
 		StrikeMgr = XComGameState_SupportStrikeManager(NewGameState.CreateNewStateObject(class'XComGameState_SupportStrikeManager'));
-		`LOG("[" $ GetFuncName() $ "] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,Log(,true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2DownloadableContentInfo_WotC_SupportStrikes::" $ GetFuncName() $ "] Installing Support Strike Manager with Object ID: " $ StrikeMgr.ObjectID,Log(,true),'WotC_Gameplay_SupportStrikes');
 
 		// Create arrays for month
 		StrikeMgr.InitializeCurrentUsage();
 	}
 	else
 	{
-		`LOG("[" $ GetFuncName() $ "] Verifying Save: " ,Log(,true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2DownloadableContentInfo_WotC_SupportStrikes::" $ GetFuncName() $ "] Verifying Save: " ,Log(,true),'WotC_Gameplay_SupportStrikes');
 
 		//Verify data integrity
 		foreach StrikeMgr.PurchasedSupportStrikes(Template)
 		{
-			`LOG("[" $ GetFuncName() $ "] "$ Template,Log(,true),'WotC_Gameplay_SupportStrikes');
+			`LOG("[X2DownloadableContentInfo_WotC_SupportStrikes::" $ GetFuncName() $ "] "$ Template,Log(,true),'WotC_Gameplay_SupportStrikes');
 		}
 	}
 
 	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-		`LOG("[" $ GetFuncName() $ "] SUCCESS... Installed Support Strike Manager.",Log(,true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2DownloadableContentInfo_WotC_SupportStrikes::" $ GetFuncName() $ "] SUCCESS... Installed Support Strike Manager.",Log(,true),'WotC_Gameplay_SupportStrikes');
 		History.AddGameStateToHistory(NewGameState);
 	}
 	else
 	{
-		`LOG("[" $ GetFuncName() $ "] Support Strike Manager was already installed.",Log(,true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2DownloadableContentInfo_WotC_SupportStrikes::" $ GetFuncName() $ "] Support Strike Manager was already installed.",Log(,true),'WotC_Gameplay_SupportStrikes');
 		History.CleanupPendingGameState(NewGameState);
 	}
 }

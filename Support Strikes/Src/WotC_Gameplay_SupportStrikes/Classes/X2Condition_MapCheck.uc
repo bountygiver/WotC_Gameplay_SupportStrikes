@@ -23,9 +23,9 @@ event name CallMeetsCondition(XComGameState_BaseObject kTarget)
 	PlotDef = `PARCELMGR.GetPlotDefinition(BattleData.MapData.PlotMapName);
 	PlotType = PlotDef.strType;
 
-	`LOG("[X2Condition_MapCheck::CallMeetsCondition()] Count: Disallowed Biomes: "$ DisallowedBiomes.Length $", Disallowed Plots: "$ DisallowedPlots.Length $", Disallowed Parcels: "$ DisallowedParcels.Length , false, 'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2Condition_MapCheck::CallMeetsCondition()] Biome: " $ BattleData.MapData.Biome, false,'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2Condition_MapCheck::CallMeetsCondition()] Plot Type: " $ PlotType , false,'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Count: Disallowed Biomes: "$ DisallowedBiomes.Length $", Disallowed Plots: "$ DisallowedPlots.Length $", Disallowed Parcels: "$ DisallowedParcels.Length , false, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Biome: " $ BattleData.MapData.Biome, false,'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Plot Type: " $ PlotType , false,'WotC_Gameplay_SupportStrikes');
 
 	if (DisallowedBiomes.Length > 0)
 		if (DisallowedBiomes.Find(BattleData.MapData.Biome) != INDEX_NONE)
@@ -40,7 +40,7 @@ event name CallMeetsCondition(XComGameState_BaseObject kTarget)
 			if (DisallowedParcels.Find(ParcelComp.MapName) != INDEX_NONE)
 				return 'AA_MustBeOutdoors';
 
-	`LOG("[X2Condition_MapCheck::CallMeetsCondition()] Condition Passed", false,'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Condition Passed", false,'WotC_Gameplay_SupportStrikes');
 
 	return 'AA_Success';
 }

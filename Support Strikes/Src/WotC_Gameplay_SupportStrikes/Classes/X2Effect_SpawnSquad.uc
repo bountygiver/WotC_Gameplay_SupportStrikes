@@ -34,14 +34,14 @@ simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffe
 
 	if (TargetUnitState == none) 
 	{
-		`LOG("[" $ GetFuncName() $ "] Spawn Soldier effect was magically applied to a non-existent unit!", , 'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Spawn Soldier effect was magically applied to a non-existent unit!", , 'WotC_Gameplay_SupportStrikes');
 	}
 
-	`LOG("[" $ GetFuncName() $ "] Begin Spawn Event", , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Begin Spawn Event", , 'WotC_Gameplay_SupportStrikes');
 
 	TriggerSpawnEvent(ApplyEffectParameters, TargetUnitState, NewGameState);
 
-	`LOG("[" $ GetFuncName() $ "] Event Completed", , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Event Completed", , 'WotC_Gameplay_SupportStrikes');
 }
 
 function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XComGameState_Unit EffectTargetUnit, XComGameState NewGameState)
@@ -64,7 +64,7 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 	TargetUnitState = XComGameState_Unit(History.GetGameStateForObjectID(ApplyEffectParameters.TargetStateObjectRef.ObjectID));
 	if (TargetUnitState == none) 
 	{
-		`LOG("[" $ GetFuncName() $ "] Failed to get the history for Unit State of the Spawn Soldier effect's target!", , 'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Failed to get the history for Unit State of the Spawn Soldier effect's target!", , 'WotC_Gameplay_SupportStrikes');
 		`Redscreen("Failed to get the history for Unit State of the Spawn Soldier effect's target");
 	}
 
@@ -82,7 +82,7 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 	World = `XWORLD;
 	UnusedLocations = ApplyEffectParameters.AbilityResultContext.RelevantEffectTiles;
 
-	`LOG("[" $ GetFuncName() $ "] Generated " $ UnusedLocations.Length $ " possible locations from the center: " $ ApplyEffectParameters.AbilityInputContext.TargetLocations[0], , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Generated " $ UnusedLocations.Length $ " possible locations from the center: " $ ApplyEffectParameters.AbilityInputContext.TargetLocations[0], , 'WotC_Gameplay_SupportStrikes');
 
 	//filter through all tiles and prune tiles that are not on the floor
 	foreach UnusedLocations(kTile)
@@ -94,7 +94,7 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 	// Copy the array back into our tiles
 	UnusedLocations = FinalTiles;
 
-	`LOG("[" $ GetFuncName() $ "] Pruned non-floor and invalid tiles and are left with " $ UnusedLocations.Length $ " possible locations from the center: " $ ApplyEffectParameters.AbilityInputContext.TargetLocations[0], , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Pruned non-floor and invalid tiles and are left with " $ UnusedLocations.Length $ " possible locations from the center: " $ ApplyEffectParameters.AbilityInputContext.TargetLocations[0], , 'WotC_Gameplay_SupportStrikes');
 
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
 	StrikeTactical = XComGameState_SupportStrike_Tactical(History.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
@@ -106,14 +106,14 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 	NewGroupState.EncounterID	= EncounterID;
 	NewGroupState.TeamName		= eTeam_XCom;
 
-	`LOG("[" $ GetFuncName() $ "] Created AIGroup GameState with Object ID " $ NewGroupState.ObjectID, , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Created AIGroup GameState with Object ID " $ NewGroupState.ObjectID, , 'WotC_Gameplay_SupportStrikes');
 
-	`LOG("[" $ GetFuncName() $ "] Querying Object: " $ StrikeTactical.XComResistanceRNFIDs.Length $ " Soldiers, " $ StrikeTactical.CosmeticResistanceRNFIDs.Length $ " Copies, and " $ StrikeTactical.Pilots.Length $ " Pilots." ,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Querying Object: " $ StrikeTactical.XComResistanceRNFIDs.Length $ " Soldiers, " $ StrikeTactical.CosmeticResistanceRNFIDs.Length $ " Copies, and " $ StrikeTactical.Pilots.Length $ " Pilots." ,, 'WotC_Gameplay_SupportStrikes');
 
 	//	Spawn Max Soldiers
 	for (i = 0; i < MaxSoldiers; i++)
 	{
-		`LOG("[" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.XComResistanceRNFIDs[i].ObjectID ,, 'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.XComResistanceRNFIDs[i].ObjectID ,, 'WotC_Gameplay_SupportStrikes');
 		SpawnedUnit = AddXComFriendliesToTactical( StrikeTactical.XComResistanceRNFIDs[i], NewGameState, GetSpawnLocation(ApplyEffectParameters, NewGameState), NewGroupState);
 		//	we use a Unit Value on the target of the persistent effect to store the Reference of the soldier we just spawned
 		//	the ability that applied this persistent effect will use this Reference in its Build Visulization function to propely visualize the soldier's spawning
@@ -130,7 +130,7 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 		for (i = 0; i < MaxSoldiers; i++)
 		{
 			// Spawn in the cosmetic units too
-			`LOG("[" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.CosmeticResistanceRNFIDs[i].ObjectID ,, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.CosmeticResistanceRNFIDs[i].ObjectID ,, 'WotC_Gameplay_SupportStrikes');
 			SpawnedUnit = AddXComFriendliesToTactical( StrikeTactical.CosmeticResistanceRNFIDs[i], NewGameState, vect(0,0,0), NewGroupState, true);
 			EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ Idx), SpawnedUnit.ObjectID, eCleanup_BeginTurn);
 
@@ -143,7 +143,7 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 	for (i = 0; i < MaxPilots; i++)
 	{
 		// Spawn in pilots
-		`LOG("[" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.Pilots[i].ObjectID ,class'X2Helpers_MiscFunctions'.static.Log(,true), 'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Grabbing ObjectID: " $ StrikeTactical.Pilots[i].ObjectID ,class'X2Helpers_MiscFunctions'.static.Log(,true), 'WotC_Gameplay_SupportStrikes');
 		SpawnedUnit = AddXComFriendliesToTactical ( StrikeTactical.Pilots[i], NewGameState, vect(0,0,0), NewGroupState, true);
 		EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ Idx), SpawnedUnit.ObjectID, eCleanup_BeginTurn);
 
@@ -152,7 +152,7 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 		Idx++;
 	}
 
-	`LOG("[" $ GetFuncName() $ "] Index count: " $ Idx ,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Index count: " $ Idx ,, 'WotC_Gameplay_SupportStrikes');
 }
 
 function vector GetSpawnLocation(const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState)
@@ -176,7 +176,7 @@ function vector GetSpawnLocation(const out EffectAppliedData ApplyEffectParamete
 
 	Destination = World.GetPositionFromTileCoordinates(ChosenTile);
 
-	`LOG("[" $ GetFuncName() $ "] Picked Vector: " $ Destination, , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Picked Vector: " $ Destination, , 'WotC_Gameplay_SupportStrikes');
 
 	return Destination;
 }
@@ -198,7 +198,7 @@ public static function XComGameState_Unit AddXComFriendliesToTactical(StateObjec
 	// Bad ObjectID test
 	if (UnitRef.ObjectID == 0)
 	{
-		`LOG("[" $ GetFuncName() $ "] ERROR, Invalid ObjectID was sent in!",, 'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] ERROR, Invalid ObjectID was sent in!",, 'WotC_Gameplay_SupportStrikes');
 		return none;
 	}
 	
@@ -249,7 +249,7 @@ public static function XComGameState_Unit AddXComFriendliesToTactical(StateObjec
 			AIGroup.AddUnitToGroup(SpawnedUnit.ObjectID, NewGameState);
 		}
 		else
-		`LOG("[" $ GetFuncName() $ "] ERROR, No AIGroup that belongs to the player was found", , 'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] ERROR, No AIGroup that belongs to the player was found", , 'WotC_Gameplay_SupportStrikes');
 
 		//Add the new unit to the AI group
 		//AIGroup.AddUnitToGroup(SpawnedUnit.ObjectID, NewGameState);
@@ -281,7 +281,7 @@ public static function XComGameState_Unit AddXComFriendliesToTactical(StateObjec
 	`TACTICALRULES.InitializeUnitAbilities(NewGameState, SpawnedUnit);
 
 
-	`LOG("[" $ GetFuncName() $ "] Spawned Unit: " $ SpawnedUnit.GetFullName() $ " Of Template: " $ SpawnedUnit.GetMyTemplate().DataName $ " with ObjectID " $ SpawnedUnit.ObjectID, , 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] Spawned Unit: " $ SpawnedUnit.GetFullName() $ " Of Template: " $ SpawnedUnit.GetMyTemplate().DataName $ " with ObjectID " $ SpawnedUnit.ObjectID, , 'WotC_Gameplay_SupportStrikes');
 
 	return SpawnedUnit;
 }
@@ -369,10 +369,10 @@ function AddSpawnVisualizationsToTracks(XComGameStateContext Context, XComGameSt
 
 		//Make sure they're hidden until ShowSpawnedUnit makes them visible (SyncVisualizer unhides them)
 		XGUnit(SpawnedUnit.GetVisualizer()).m_bForceHidden = true;
-		`LOG("[" $ GetFuncName() $ "] " $ SpawnedUnit.GetFullName() $ "'s visualizer initialized" ,, 'WotC_Strategy_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] " $ SpawnedUnit.GetFullName() $ "'s visualizer initialized" ,, 'WotC_Strategy_SupportStrikes');
 	}
 	else
-		`LOG("[" $ GetFuncName() $ "] WARNING, " $ SpawnedUnit.GetFullName() $ " already has a visualizer initialized!" ,, 'WotC_Strategy_SupportStrikes');
+		`LOG("[X2Effect_SpawnSquad::" $ GetFuncName() $ "] WARNING, " $ SpawnedUnit.GetFullName() $ " already has a visualizer initialized!" ,, 'WotC_Strategy_SupportStrikes');
 }
 
 // Get the team that this unit should be added to -LEB

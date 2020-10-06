@@ -68,7 +68,7 @@ function AddProjectiles(int ProjectileIndex, int InputOffsetX, int InputOffsetY)
 	ImpactLocation.X += World.WORLD_StepSize * InputOffsetX;
 	ImpactLocation.Y += World.WORLD_StepSize * InputOffsetY;
 
-	`LOG("[X2Action_Fire_StrafingRun_A10::" $ GetFuncName() $ "] Impact Location: [" $ ImpactLocation.X $ ", "  $ ImpactLocation.Y $ ", " $ ImpactLocation.Z $ "], Rotation: [" $ 
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Impact Location: [" $ ImpactLocation.X $ ", "  $ ImpactLocation.Y $ ", " $ ImpactLocation.Z $ "], Rotation: [" $ 
 	Rotator(ImpactLocation).Pitch $ ", "  $ Rotator(ImpactLocation).Yaw $ ", " $ Rotator(ImpactLocation).Roll $ "]" ,, 'WotC_Gameplay_SupportStrikes');
 
 
@@ -83,7 +83,7 @@ function AddProjectiles(int ProjectileIndex, int InputOffsetX, int InputOffsetY)
 	//SourceLocation.X = ImpactLocation.X;
 	//SourceLocation.Y = ImpactLocation.Y;
 	
-	`LOG("[X2Action_Fire_StrafingRun_A10::" $ GetFuncName() $ "] Source Location: [" $ SourceLocation.X $ ", "  $ SourceLocation.Y $ ", " $ SourceLocation.Z $ "], Rotation: [" $ 
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Source Location: [" $ SourceLocation.X $ ", "  $ SourceLocation.Y $ ", " $ SourceLocation.Z $ "], Rotation: [" $ 
 	Rotator(SourceLocation).Pitch $ ", "  $ Rotator(SourceLocation).Yaw $ ", " $ Rotator(SourceLocation).Roll $ "]" ,, 'WotC_Gameplay_SupportStrikes');
 
 	Unit.AddBlazingPinionsProjectile(SourceLocation, ImpactLocation, AbilityContext);

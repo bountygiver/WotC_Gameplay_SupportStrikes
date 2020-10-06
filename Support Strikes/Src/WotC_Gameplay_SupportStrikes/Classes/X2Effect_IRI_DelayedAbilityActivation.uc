@@ -14,7 +14,7 @@ static private function TriggerAssociatedEvent(X2Effect_Persistent PersistentEff
 
 	SourceUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ApplyEffectParameters.SourceStateObjectRef.ObjectID));
 
-	`LOG("Delayed Effect: triggering event:" @ DelayedEffect.TriggerEventName,, 'IRIMORTAR');
+	`LOG("[X2Effect_IRI_DelayedAbilityActivation::" $ GetFuncName() $ "] Delayed Effect: triggering event:" @ DelayedEffect.TriggerEventName,, 'IRIMORTAR');
 
 	`XEVENTMGR.TriggerEvent(DelayedEffect.TriggerEventName, SourceUnit, AEPObject, NewGameState);
 }

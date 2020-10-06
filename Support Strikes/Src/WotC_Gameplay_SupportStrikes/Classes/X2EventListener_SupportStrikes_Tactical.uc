@@ -59,7 +59,7 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 	// If there is no strikes bought or if the "Not enough resources" flag is raised, exit listener
 	if (SupportStrikeMgr.PurchasedSupportStrikes.Length == 0 || SupportStrikeMgr.bInvalid_NoResources)
 	{
-		`LOG("[OnTacticalBeginPlay()] Player has no Strikes." ,,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] Player has no Strikes." ,,'WotC_Gameplay_SupportStrikes');
 		return ELR_NoInterrupt;
 	}
 
@@ -74,7 +74,7 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 	//
 	if ( DoesGeneratedMissionHaveInvalidMap(History) )
 	{
-		`LOG("[OnTacticalBeginPlay()] No Z-level Clearance in map." ,,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] No Z-level Clearance in map." ,,'WotC_Gameplay_SupportStrikes');
 		SupportStrikeMgr.bInvalid_HeightClearance = true;
 	}
 	// If the flag is not raised, then there's support strikes to add
@@ -97,7 +97,7 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 				foreach SupportStrikeMgr.CurrentMissionSupportStrikes(UnlockName)
 				{
 					class'X2Helpers_MiscFunctions'.static.GiveItem(UnlockName, UnitState, NewGameState);
-					`LOG("[OnTacticalBeginPlay()] " $ UnitState.GetFullName() $ " has been given " $ UnlockName,,'WotC_Gameplay_SupportStrikes');
+					`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] " $ UnitState.GetFullName() $ " has been given " $ UnlockName,,'WotC_Gameplay_SupportStrikes');
 				}
 			}
 		}
@@ -111,7 +111,7 @@ static function EventListenerReturn OnTacticalBeginPlay(Object EventData, Object
 	// Otherwise, clean up the gamestate
 	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-		`LOG("[OnTacticalBeginPlay()] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
 		`TACTICALRULES.SubmitGameState(NewGameState);
 	}
 	else
@@ -135,9 +135,9 @@ static function bool DoesGeneratedMissionHaveInvalidMap(XComGameStateHistory His
 	PlotDef = `PARCELMGR.GetPlotDefinition(BattleData.MapData.PlotMapName);
 	PlotType = PlotDef.strType;
 
-	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Count: Disallowed Biomes: "$ class'X2Condition_MapCheck'.default.DisallowedBiomes.Length $", Disallowed Plots: "$ class'X2Condition_MapCheck'.default.DisallowedPlots.Length $", Disallowed Parcels: "$ class'X2Condition_MapCheck'.default.DisallowedParcels.Length ,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Biome: " $ BattleData.MapData.Biome,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Plot Type: " $ PlotType ,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] Count: Disallowed Biomes: "$ class'X2Condition_MapCheck'.default.DisallowedBiomes.Length $", Disallowed Plots: "$ class'X2Condition_MapCheck'.default.DisallowedPlots.Length $", Disallowed Parcels: "$ class'X2Condition_MapCheck'.default.DisallowedParcels.Length ,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] Biome: " $ BattleData.MapData.Biome,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] Plot Type: " $ PlotType ,class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
 
 	if (class'X2Condition_MapCheck'.default.DisallowedBiomes.Length > 0)
 		if (class'X2Condition_MapCheck'.default.DisallowedBiomes.Find(BattleData.MapData.Biome) != INDEX_NONE)
@@ -152,7 +152,7 @@ static function bool DoesGeneratedMissionHaveInvalidMap(XComGameStateHistory His
 			if (class'X2Condition_MapCheck'.default.DisallowedParcels.Find(ParcelComp.MapName) != INDEX_NONE)
 				return true;
 
-	`LOG("[X2EventListener_SupportStrikes.DoesGeneratedMissionHaveInvalidMap()] Condition Passed",class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] Condition Passed",class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,true),'WotC_Gameplay_SupportStrikes');
 	return false;
 }
 
@@ -207,7 +207,7 @@ static function EventListenerReturn RemoveFromStrikeManager(Object EventData, Ob
 	// Otherwise, clean up the gamestate
 	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-		`LOG("[" $ GetFuncName() $ "] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2EventListener_SupportStrikes_Tactical::" $ GetFuncName() $ "] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
 		`TACTICALRULES.SubmitGameState(NewGameState);
 	}
 	else

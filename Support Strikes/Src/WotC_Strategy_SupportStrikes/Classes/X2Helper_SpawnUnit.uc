@@ -65,7 +65,7 @@ public static function XComDropTrooperData PickBestDataSet(int ForceLevel, optio
 {
 	local int i;
 
-	`LOG("[PickBestDataSet()] Current force level: " $ ForceLevel $ " and Pilot: " $ bIsPilot,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Current force level: " $ ForceLevel $ " and Pilot: " $ bIsPilot,, 'WotC_Gameplay_SupportStrikes');
 
 	for (i = 0; i < default.arrSpawnUnitData.Length; i++)
 	{
@@ -78,7 +78,7 @@ public static function XComDropTrooperData PickBestDataSet(int ForceLevel, optio
 		{
 			if (default.arrSpawnUnitData[i].bIsPilot)
 			{
-				`LOG("[PickBestDataSet()] Picked data set at index " $ i,, 'WotC_Gameplay_SupportStrikes');
+				`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Picked data set at index " $ i,, 'WotC_Gameplay_SupportStrikes');
 				return default.arrSpawnUnitData[i];
 			}
 			else
@@ -88,14 +88,14 @@ public static function XComDropTrooperData PickBestDataSet(int ForceLevel, optio
 		if ( (ForceLevel >= default.arrSpawnUnitData[i].MinForceLevel) &&
 			 (ForceLevel <= default.arrSpawnUnitData[i].MaxForceLevel) )
 		{
-			`LOG("[PickBestDataSet()] Picked data set at index " $ i,, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Picked data set at index " $ i,, 'WotC_Gameplay_SupportStrikes');
 			return default.arrSpawnUnitData[i];
 		}
 		else
-			`LOG("[PickBestDataSet()] " $ ForceLevel $ " not greater than " $ default.arrSpawnUnitData[i].MinForceLevel $ " and not less than " $ default.arrSpawnUnitData[i].MinForceLevel,, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] " $ ForceLevel $ " not greater than " $ default.arrSpawnUnitData[i].MinForceLevel $ " and not less than " $ default.arrSpawnUnitData[i].MinForceLevel,, 'WotC_Gameplay_SupportStrikes');
 
 	}
-	`LOG("[PickBestDataSet()] ERROR, no dataset was picked!",, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] ERROR, no dataset was picked!",, 'WotC_Gameplay_SupportStrikes');
 }
 
 static function ChangeEquipment(SpawnCharacterData CharTemplate, XComGameState_Unit UnitState, XComGameState NewGameState, bool bIsCineActor)
@@ -145,11 +145,11 @@ static function ChangeEquipment(SpawnCharacterData CharTemplate, XComGameState_U
 					// Add it to the inventory
 					UnitState.AddItemToInventory(ItemState, ItemTemplate.InventorySlot, NewGameState);
 
-					`LOG("[" $ GetFuncName() $ "] Gave " $ UnitState.GetFullName() $ " a " $ ItemState.GetMyTemplate().FriendlyName,, 'WotC_Strategy_SupportStrikes');
+					`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Gave " $ UnitState.GetFullName() $ " a " $ ItemState.GetMyTemplate().FriendlyName,, 'WotC_Strategy_SupportStrikes');
 				}
 			}
 			else
-				`LOG("[" $ GetFuncName() $ "] Primary Weapon not specified",, 'WotC_Strategy_SupportStrikes');
+				`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Primary Weapon not specified",, 'WotC_Strategy_SupportStrikes');
 
 			if (WeaponToAdd.SecWeaponTemplate != '')
 			{
@@ -174,15 +174,15 @@ static function ChangeEquipment(SpawnCharacterData CharTemplate, XComGameState_U
 					// Add it to the inventory
 					UnitState.AddItemToInventory(ItemState, ItemTemplate.InventorySlot, NewGameState);
 
-					`LOG("[" $ GetFuncName() $ "] Gave " $ UnitState.GetFullName() $ " a " $ ItemState.GetMyTemplate().FriendlyName,, 'WotC_Strategy_SupportStrikes');
+					`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Gave " $ UnitState.GetFullName() $ " a " $ ItemState.GetMyTemplate().FriendlyName,, 'WotC_Strategy_SupportStrikes');
 				}
 			}
 			else
-				`LOG("[" $ GetFuncName() $ "] Secondary Weapon not specified",, 'WotC_Strategy_SupportStrikes');
+				`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Secondary Weapon not specified",, 'WotC_Strategy_SupportStrikes');
 		}
 		else
-			`LOG("[" $ GetFuncName() $ "] Could not give " $ UnitState.GetFullName() $ " a weapon or item under " $ CharTemplate.WPNCategory,, 'WotC_Strategy_SupportStrikes');
+			`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] Could not give " $ UnitState.GetFullName() $ " a weapon or item under " $ CharTemplate.WPNCategory,, 'WotC_Strategy_SupportStrikes');
 	}
 	else
-		`LOG("[" $ GetFuncName() $ "] " $ CharTemplate.WPNCategory $ " not specified",, 'WotC_Strategy_SupportStrikes');
+		`LOG("[X2Helper_SpawnUnit::" $ GetFuncName() $ "] " $ CharTemplate.WPNCategory $ " not specified",, 'WotC_Strategy_SupportStrikes');
 }

@@ -23,7 +23,7 @@ private function DoTargetFX(XComGameState_Effect TargetEffect, out Visualization
 
 	if (VFXPath == "")
 	{
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] VFX was not found.", class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] VFX was not found.", class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(true),'WotC_Gameplay_SupportStrikes');
 		return;
 	}
 
@@ -39,11 +39,11 @@ private function DoTargetFX(XComGameState_Effect TargetEffect, out Visualization
 		EffectAction.bStopEffect = bStopEffect;
 		EffectAction.EffectLocation = TargetEffect.ApplyEffectParameters.AbilityInputContext.TargetLocations[0];
 
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] Applied Effect: " $ EffectAction.EffectName $ " to world.", bStopEffect && class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,false) ,'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Applied Effect: " $ EffectAction.EffectName $ " to world.", bStopEffect && class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(,false) ,'WotC_Gameplay_SupportStrikes');
 	}
 	else
 	{
-		`LOG("[X2Effect_SpawnAOEIndicator::DoTargetFX()] TargetLocations is empty.",class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(true),'WotC_Gameplay_SupportStrikes');
+		`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] TargetLocations is empty.",class'X2DownloadableContentInfo_WotC_SupportStrikes'.static.Log(true),'WotC_Gameplay_SupportStrikes');
 	}
 }
 

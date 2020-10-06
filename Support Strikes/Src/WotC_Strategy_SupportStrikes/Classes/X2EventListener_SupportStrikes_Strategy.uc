@@ -49,7 +49,7 @@ static function EventListenerReturn OnViewStrategyPolicies(Object EventData, Obj
 	// Otherwise, clean up the gamestate
 	if (NewGameState.GetNumGameStateObjects() > 0)
 	{
-		`LOG("[" $ GetFuncName() $ "] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
+		`LOG("[X2EventListener_SupportStrikes_Strategy::" $ GetFuncName() $ "] Submitted changes to history." ,,'WotC_Gameplay_SupportStrikes');
 		`XCOMGAME.GameRuleset.SubmitGameState(NewGameState);
 	}
 	else

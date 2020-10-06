@@ -27,7 +27,7 @@ function Init()
 
 	RetrieveSourceUnit(StateChangeContext);
 
-	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Recorded SourceUnitID: " $ SourceUnitID,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Recorded SourceUnitID: " $ SourceUnitID,, 'WotC_Gameplay_SupportStrikes');
 
 	AddUnitsToMatinee(StateChangeContext);
 
@@ -67,7 +67,7 @@ private function AddUnitsToMatinee(XComGameStateContext InContext)
 		{
 			// Pilots don't count towards the unit index, they have their own index
 			AddUnitToMatinee(name("Pilot_0" $ PilotIndex), GameStateUnit);			
-			`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to Pilot_0" $ PilotIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to Pilot_0" $ PilotIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
 			PilotIndex++;
 
 			CleanUpUnitRefs.AddItem(GameStateUnit.GetReference());
@@ -77,7 +77,7 @@ private function AddUnitsToMatinee(XComGameStateContext InContext)
 			// Add units to the fake platform
 			AddUnitToMatinee(name("F_Platform_0" $ CosmeticUnitIndex), GameStateUnit);
 
-			`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to F_Platform_0" $ CosmeticUnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to F_Platform_0" $ CosmeticUnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
 			CosmeticUnitIndex++;
 
 			CleanUpUnitRefs.AddItem(GameStateUnit.GetReference());
@@ -87,16 +87,16 @@ private function AddUnitsToMatinee(XComGameStateContext InContext)
 			// Add combat units to the real platform
 			AddUnitToMatinee(name("R_Platform_0" $ UnitIndex), GameStateUnit);
 
-			`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to R_Platform_0" $ UnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Adding " $ GameStateUnit.GetFullName() $ " of Object ID: " $ GameStateUnit.ObjectID $ " to R_Platform_0" $ UnitIndex $ " slot.",, 'WotC_Gameplay_SupportStrikes');
 			UnitIndex++;
 
 			MatineeUnitRefs.AddItem(GameStateUnit.GetReference());
 		}
 	}
 
-	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Pilots in matinee: " $ (PilotIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Combat Units in matinee: " $ (UnitIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
-	`LOG("[X2Action_Matinee_LittleBird::" $ GetFuncName() $ "] Cosmetic Units in matinee: " $ (CosmeticUnitIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Pilots in matinee: " $ (PilotIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Combat Units in matinee: " $ (UnitIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Cosmetic Units in matinee: " $ (CosmeticUnitIndex - 1) ,, 'WotC_Gameplay_SupportStrikes');
 
 	// Fill in blank slots if Unit Index is less that NumDropSlots
 	while( UnitIndex < NumDropSlots )
@@ -142,14 +142,14 @@ private function FindMatinee(string MatineePrefix)
 		//`log("" $ Matinee.ObjComment,,'Matinee');
 		if( Instr(Matinee.ObjComment, DesiredMatineePrefix, , true) >= 0 )
 		{
-			`LOG("[X2Action_Matinee_LittleBird.FindMatinee()] SUCCESS, Matinee found with prefix: " $ MatineePrefix,, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] SUCCESS, Matinee found with prefix: " $ MatineePrefix,, 'WotC_Gameplay_SupportStrikes');
 
 			Matinees.AddItem(Matinee);
 			return;
 		}
 	}
 
-	`LOG("[X2Action_Matinee_LittleBird.FindMatinee()] ERROR, No matinee found with prefix: " $ MatineePrefix $ "!",, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] ERROR, No matinee found with prefix: " $ MatineePrefix $ "!",, 'WotC_Gameplay_SupportStrikes');
 	Matinee = none;
 }
 
@@ -235,9 +235,9 @@ function CompleteAction()
 
 	WorldData = `XWORLD;
 
-	`LOG("[X2Action_Matinee_LittleBird.CompleteAction()] Cleaning up and deleting Cinematic Units.",, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] Cleaning up and deleting Cinematic Units.",, 'WotC_Gameplay_SupportStrikes');
 
-	//Delete the pilots and cosmetic units from the game, they don't serve any purpose
+	//Delete the pilots and cosmetic units from the tactical game, they don't serve any purpose
 	foreach CleanUpUnitRefs(UnitRef)
 	{
 		UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(UnitRef.ObjectID));

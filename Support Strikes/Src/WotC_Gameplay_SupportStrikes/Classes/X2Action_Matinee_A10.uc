@@ -51,14 +51,14 @@ private function FindMatinee(string MatineePrefix)
 		//`log("" $ Matinee.ObjComment,,'Matinee');
 		if( Instr(Matinee.ObjComment, DesiredMatineePrefix, , true) >= 0 )
 		{
-			`LOG("[X2Action_Matinee_A10.FindMatinee()] SUCCESS, Matinee found with prefix: " $ MatineePrefix,, 'WotC_Gameplay_SupportStrikes');
+			`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] SUCCESS, Matinee found with prefix: " $ MatineePrefix,, 'WotC_Gameplay_SupportStrikes');
 
 			Matinees.AddItem(Matinee);
 			return;
 		}
 	}
 
-	`LOG("[X2Action_Matinee_A10.FindMatinee()] ERROR, No matinee found with prefix: " $ MatineePrefix $ "!",, 'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] ERROR, No matinee found with prefix: " $ MatineePrefix $ "!",, 'WotC_Gameplay_SupportStrikes');
 	Matinee = none;
 }
 
@@ -92,7 +92,7 @@ Begin:
 
 function CompleteAction()
 {
-	`LOG("[X2Action_Matinee_A10::" $ GetFuncName() $ "] No more matinees to play, closing action.",,'WotC_Gameplay_SupportStrikes');
+	`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] No more matinees to play, closing action.",,'WotC_Gameplay_SupportStrikes');
 
 	super.CompleteAction();
 	EndMatinee();

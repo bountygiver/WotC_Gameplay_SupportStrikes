@@ -21,10 +21,10 @@ event name CallAbilityMeetsCondition(XComGameState_Ability kAbility, XComGameSta
 
 	if (SupportStrikeMgr.EnoughIntelForStrike(kAbility.GetMyTemplateName()))
 	{
-//		`LOG("[X2Condition_ResourceCost::" $ GetFuncName() $ "] Condition Passed, Final Cost is " $ FinalCost, false,'WotC_Gameplay_SupportStrikes');
+//		`LOG(`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] $ GetFuncName() $ "] Condition Passed, Final Cost is " $ FinalCost, false,'WotC_Gameplay_SupportStrikes');
 		return 'AA_Success';
 	}
 	
-//	`LOG("[X2Condition_ResourceCost::" $ GetFuncName() $ "] Condition Failed, Final Cost is " $ FinalCost, false,'WotC_Gameplay_SupportStrikes');
+//	`LOG(`LOG("[" $ self.class $ "::" $ GetFuncName() $ "] $ GetFuncName() $ "] Condition Failed, Final Cost is " $ FinalCost, false,'WotC_Gameplay_SupportStrikes');
 	return 'AA_NotEnoughResources_Intel';
 }
