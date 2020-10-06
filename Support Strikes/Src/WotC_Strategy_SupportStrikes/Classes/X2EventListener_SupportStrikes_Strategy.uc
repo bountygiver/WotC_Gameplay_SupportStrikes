@@ -33,6 +33,7 @@ static function EventListenerReturn OnViewStrategyPolicies(Object EventData, Obj
 	local XComGameStateHistory					History;
 	local XComGameState							NewGameState;
 	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
+	local XComGameState_SupportStrike_Tactical	StrikeTactical;
 
 	History = `XCOMHISTORY;
 
@@ -44,6 +45,15 @@ static function EventListenerReturn OnViewStrategyPolicies(Object EventData, Obj
 
 	//Reset costs back to original values
 	SupportStrikeMgr.StrikeCurrentMonthUsage = SupportStrikeMgr.StrikeOriginalMonthUsage;
+
+	StrikeTactical = XComGameState_SupportStrike_Tactical(`XCOMHISTORY.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
+
+	// Get the tactical object and regen soldiers
+	if (StrikeTactical != none)
+	{
+		StrikeTactical = XComGameState_SupportStrike_Tactical(NewGameState.ModifyStateObject(class'XComGameState_SupportStrike_Tactical', StrikeTactical.ObjectID));
+		StrikeTactical.UpdateRNFSoldiers(NewGameState);
+	}
 
 	// If something happened, submit gamestate
 	// Otherwise, clean up the gamestate

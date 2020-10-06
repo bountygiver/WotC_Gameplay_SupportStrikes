@@ -207,6 +207,7 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 	local array<XComGameState_Item>							AllItems;
 	local XComGameState_Item								Item;
 	local XComGameState_SupportStrikeManager				SupportStrikeMgr;
+	local XComGameState_SupportStrike_Tactical				StrikeTactical;
 
 	History = `XCOMHISTORY;
 	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
@@ -228,9 +229,6 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 			SupportStrikeMgr.bValid = false;
 			SupportStrikeMgr.bInvalid_NoResources = false;
 			SupportStrikeMgr.bInvalid_PartialResources = false;
-
-			//Disable Vague Orders
-			SupportStrikeMgr.bEnableVagueOrders = false;
 
 			XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
 
@@ -255,6 +253,19 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 							}
 						}
 					}
+				}
+			}
+
+			if (SupportStrikeMgr.bHeliDropInCalled)
+			{
+				//Tell the Tactical object to update its soldiers
+				StrikeTactical = XComGameState_SupportStrike_Tactical(`XCOMHISTORY.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
+				if (StrikeTactical != none)
+				{
+					StrikeTactical = XComGameState_SupportStrike_Tactical(NewGameState.ModifyStateObject(class'XComGameState_SupportStrike_Tactical', StrikeTactical.ObjectID));
+					StrikeTactical.FillRNFSoldiers(NewGameState);
+					
+					SupportStrikeMgr.bHeliDropInCalled = false;
 				}
 			}
 		}
