@@ -280,18 +280,11 @@ simulated function A10StrafingRun_BuildVisualization(XComGameState VisualizeGame
 	local XComGameStateHistory				History;
 	local XComGameStateVisualizationMgr		VisualizationMgr;
 	local XComGameStateContext_Ability		Context;
-	local X2AbilityTemplate					AbilityTemplate;
-	local VisualizationActionMetadata		ActionMetadata, SecondaryMetaData;
+	local VisualizationActionMetadata		ActionMetadata;
 	local X2Action_Matinee_A10				MatineeAction;
 	local X2Action_TimedWait				WaitAction;
-	local X2Action_EndCinescriptCamera		CinescriptEndAction;
 	local X2Action							FoundAction;
-	local X2Action_MarkerNamed				JoinActions;
-	local X2Action_Delay					DelayAction;
-	local array<X2Action>					FoundActions;
-	local Array<X2Action>					ParentActions;
 	local Rotator							NewRot;
-	local X2Action_WaitForAbilityEffect		WaitForFireEvent;
 
 	local int								iAlternateMatinee;
 	local string							PreviousCinescriptCameraType;
