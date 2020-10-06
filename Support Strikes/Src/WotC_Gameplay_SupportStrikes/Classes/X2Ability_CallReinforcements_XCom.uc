@@ -292,11 +292,10 @@ simulated function XComGameState CallReinforcements_BuildGameState( XComGameStat
 
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
 
-	// We need to enable Vague Orders on XCom's side now that heli reinforcements are in
-	if (!SupportStrikeMgr.bEnableVagueOrders)
+	// Flip the boolean so other actions can take place
+	if (!SupportStrikeMgr.bHeliDropInCalled)
 	{
-		SupportStrikeMgr.bEnableVagueOrders = true;
-		`LOG("[CallReinforcements_BuildGameState()] Vague Orders Enabled." ,,'WotC_Gameplay_SupportStrikes');
+		SupportStrikeMgr.bHeliDropInCalled = true;
 	}
 
 	//Return the game state we have created

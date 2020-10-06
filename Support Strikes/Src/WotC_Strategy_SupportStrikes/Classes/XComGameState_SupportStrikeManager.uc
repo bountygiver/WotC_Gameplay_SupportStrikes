@@ -71,7 +71,7 @@ var bool												bIonCannonUnlocked;
 var bool												bHeliDropInPreLoadUnits;
 
 // When this is implemented, control the condition that causes the ability to appear
-var bool												bEnableVagueOrders;
+var bool												bHeliDropInCalled;
 
 // For post mission project creation
 var bool												bIsClassArtillery;

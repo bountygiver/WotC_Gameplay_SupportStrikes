@@ -14,7 +14,7 @@ event name CallMeetsCondition(XComGameState_BaseObject kTarget)
 	if (SupportStrikeMgr == none)
 		return 'AA_UnknownError';
 
-	if (!SupportStrikeMgr.bEnableVagueOrders)
+	if (!SupportStrikeMgr.bHeliDropInCalled)
 		return 'AA_AbilityUnavailable';
 
 	return 'AA_Success';
