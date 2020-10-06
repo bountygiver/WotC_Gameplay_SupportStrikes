@@ -8,6 +8,7 @@ struct ResourceCost
 
 var config array<ResourceCost>	MortarStrike_HE_ResourceCost;
 var config array<ResourceCost>	MortarStrike_SMK_ResourceCost;
+var config array<ResourceCost>	Recon_T1_ResourceCost;
 var config array<ResourceCost>	HeliDropIn_ResourceCost;
 var config array<ResourceCost>	PrecisionStrike_A10_ResourceCost;
 var config array<ResourceCost>	IonCannon_ResourceCost;
@@ -22,6 +23,7 @@ static function array<X2DataTemplate> CreateTemplates()
 
 	//Air-to-Ground or General Aircraft Supports
 	Templates.AddItem(GTSUnlock_Airborne_Def_HeliDropIn_T1());
+	//Templates.AddItem(GTSUnlock_Airborne_Def_AWACS_T1());
 	Templates.AddItem(GTSUnlock_Airborne_Off_PrecisionStrike_A10_T1());
 	//Orbital Weapon Platforms
 	Templates.AddItem(GTSUnlock_Orbital_Off_IonCannon_T1());
@@ -59,6 +61,23 @@ static function X2SupportStrikeUnlockTemplate GTSUnlock_Artillery_Def_MortarStri
 
 	// Cost
 	ModifyResourceCost(Template, default.MortarStrike_SMK_ResourceCost);
+	
+	return Template;
+}
+
+static function X2SupportStrikeUnlockTemplate GTSUnlock_Airborne_Def_AWACS_T1()
+{
+	local X2SupportStrikeUnlockTemplate Template;
+
+	`CREATE_X2TEMPLATE(class'X2SupportStrikeUnlockTemplate', Template, 'GTSUnlock_Airborne_Def_AWACS_T1');
+
+	Template.bAllClasses = true;
+	Template.strImage = "img:///uilibrary_strategyimages.X2InventoryIcons.Inv_Block";
+
+	Template.AbilityName = 'Ability_Support_Airborne_Def_Recon_T1_Stage1';
+
+	// Cost
+	ModifyResourceCost(Template, default.HeliDropIn_ResourceCost);
 	
 	return Template;
 }
