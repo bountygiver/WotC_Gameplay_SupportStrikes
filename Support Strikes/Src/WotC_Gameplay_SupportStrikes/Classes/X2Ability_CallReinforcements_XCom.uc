@@ -195,12 +195,12 @@ static function X2AbilityTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stag
 	if(default.HeliDropIn_BreaksConcealment)
 	{
 		Template.ConcealmentRule = eConceal_Never;	//	always break concealment
-		Template.SuperConcealmentLoss = 100;
+		//Template.SuperConcealmentLoss = 100;
 	}
 	else
 	{
 		Template.ConcealmentRule = eConceal_Always;
-		Template.SuperConcealmentLoss = 0;
+		//Template.SuperConcealmentLoss = 0;
 	}
 	return Template;
 }
