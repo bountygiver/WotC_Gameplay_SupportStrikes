@@ -28,7 +28,7 @@ struct XComDropTrooperData
 
 	structdefaultproperties
 	{
-		UniqueID = 'Undefined';
+		UniqueID = "Undefined";
 		AlertLevel = 0;
 		MinForceLevel = 0;
 		MaxForceLevel = 0;
