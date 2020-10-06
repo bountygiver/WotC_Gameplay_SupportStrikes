@@ -30,6 +30,12 @@
     <Content Include="Config\Support Strikes\Air\Drop In\XComGameData_WeaponData.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\Support Strikes\Air\Recon\E-3 Sentry\XComGameData_SupportStrikes.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Support Strikes\Air\Recon\E-3 Sentry\XComGameData_WeaponData.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Config\Support Strikes\Air\Strafing Run\A10\XComGameData_CharacterStats.ini">
       <SubType>Content</SubType>
     </Content>
@@ -121,6 +127,9 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_OrbitalCannon.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_Recon.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Ability_StrafingRun.uc">
       <SubType>Content</SubType>
     </Content>
@@ -143,6 +152,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_MortarStrikeStageTwo.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_PlayEffect_Advanced.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_RemoveViewer.uc">
@@ -179,6 +191,12 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_IRI_PersistentSquadViewer.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_Recon.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_Recon_TargetDef.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_SmokeMortar.uc">
@@ -240,6 +258,8 @@
     <Folder Include="Config\Support Strikes" />
     <Folder Include="Config\Support Strikes\Air\Drop In" />
     <Folder Include="Config\Support Strikes\Air\Drop In\Characters" />
+    <Folder Include="Config\Support Strikes\Air\Recon" />
+    <Folder Include="Config\Support Strikes\Air\Recon\E-3 Sentry" />
     <Folder Include="Config\Support Strikes\Air\Strafing Run" />
     <Folder Include="Config\Support Strikes\Air\Strafing Run\A10" />
     <Folder Include="Config\Support Strikes\Artillery" />
