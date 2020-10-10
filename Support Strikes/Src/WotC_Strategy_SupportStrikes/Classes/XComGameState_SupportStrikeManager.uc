@@ -217,56 +217,48 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 	{
 		SupportStrikeMgr = XComGameState_SupportStrikeManager(NewGameState.ModifyStateObject(class'XComGameState_SupportStrikeManager', SupportStrikeMgr.ObjectID));
 
-		//If previous map had no height clearance, then flip the flag and do nothing else
-		if ( SupportStrikeMgr.bInvalid_HeightClearance )
-		{
-			`LOG("[" $ GetFuncName() $ "] Invalid location flag was raised! Resetting flag for next mission." , class'X2Helpers_MiscFunctions'.static.Log(true),'WotC_Strategy_SupportStrikes');
-			SupportStrikeMgr.bInvalid_HeightClearance = false;
-		}
-		else
-		{
-			//Remove flags
-			SupportStrikeMgr.bValid = false;
-			SupportStrikeMgr.bInvalid_NoResources = false;
-			SupportStrikeMgr.bInvalid_PartialResources = false;
+		//Remove flags
+		SupportStrikeMgr.bValid						= false;
+		SupportStrikeMgr.bInvalid_NoResources		= false;
+		SupportStrikeMgr.bInvalid_PartialResources	= false;
+		SupportStrikeMgr.bInvalid_HeightClearance	= true;
 
-			XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
+		XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
 
-			// Another safety check to make sure we aren't modifying states improperly
-			if (SupportStrikeMgr.CurrentMissionSupportStrikes.Length > 0)
+		// Another safety check to make sure we aren't modifying states improperly
+		if (SupportStrikeMgr.CurrentMissionSupportStrikes.Length > 0)
+		{
+			//CHeck all units in the squad and remove the appropriate items
+			foreach XComHQ.Squad(UnitRef)
 			{
-				//CHeck all units in the squad and remove the appropriate items
-				foreach XComHQ.Squad(UnitRef)
+				UnitState = XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID));
+				if (UnitState != none)
 				{
-					UnitState = XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID));
-					if (UnitState != none)
-					{
-						UnitState = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitState.ObjectID));
-						AllItems = UnitState.GetAllInventoryItems(NewGameState, true);
+					UnitState = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitState.ObjectID));
+					AllItems = UnitState.GetAllInventoryItems(NewGameState, true);
 
-						foreach AllItems(Item)
+					foreach AllItems(Item)
+					{
+						Index = SupportStrikeMgr.CurrentMissionSupportStrikes.Find(Item.GetMyTemplate().DataName);
+						if  ( Index != INDEX_NONE ) 
 						{
-							Index = SupportStrikeMgr.CurrentMissionSupportStrikes.Find(Item.GetMyTemplate().DataName);
-							if  ( Index != INDEX_NONE ) 
-							{
-								UnitState.RemoveItemFromInventory(Item, NewGameState);
-							}
+							UnitState.RemoveItemFromInventory(Item, NewGameState);
 						}
 					}
 				}
 			}
+		}
 
-			if (SupportStrikeMgr.bHeliDropInCalled)
+		if (SupportStrikeMgr.bHeliDropInCalled)
+		{
+			//Tell the Tactical object to update its soldiers
+			StrikeTactical = XComGameState_SupportStrike_Tactical(`XCOMHISTORY.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
+			if (StrikeTactical != none)
 			{
-				//Tell the Tactical object to update its soldiers
-				StrikeTactical = XComGameState_SupportStrike_Tactical(`XCOMHISTORY.GetGameStateForObjectID(SupportStrikeMgr.TacticalGameState.ObjectID));
-				if (StrikeTactical != none)
-				{
-					StrikeTactical = XComGameState_SupportStrike_Tactical(NewGameState.ModifyStateObject(class'XComGameState_SupportStrike_Tactical', StrikeTactical.ObjectID));
-					StrikeTactical.FillRNFSoldiers(NewGameState);
-					
-					SupportStrikeMgr.bHeliDropInCalled = false;
-				}
+				StrikeTactical = XComGameState_SupportStrike_Tactical(NewGameState.ModifyStateObject(class'XComGameState_SupportStrike_Tactical', StrikeTactical.ObjectID));
+				StrikeTactical.FillRNFSoldiers(NewGameState);
+				
+				SupportStrikeMgr.bHeliDropInCalled = false;
 			}
 		}
 	}
