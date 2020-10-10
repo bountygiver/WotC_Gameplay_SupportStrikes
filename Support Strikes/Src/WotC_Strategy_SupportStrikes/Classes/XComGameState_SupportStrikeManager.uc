@@ -261,6 +261,13 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 				SupportStrikeMgr.bHeliDropInCalled = false;
 			}
 		}
+
+		// Clear arrays upon exiting this function
+		if (SupportStrikeMgr.CurrentMissionSupportStrikes.Length > 0)
+		{
+			SupportStrikeMgr.CurrentMissionSupportStrikes.Length = 0;
+			SupportStrikeMgr.DisabledMissionSupportStrikes.Length = 0;
+		}
 	}
 }
 
