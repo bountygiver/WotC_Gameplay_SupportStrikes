@@ -219,6 +219,9 @@ static function X2DataTemplate CreateSupport_Air_Offensive_StrafingRun_A10_T1_WP
 	Template.InventorySlot = eInvSlot_Utility;
 	Template.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_A10_Stage1');
 	Template.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_A10_Stage2');
+	Template.Abilities.AddItem(class'X2Ability_StrafingRun'.default.StrafingRun_A10_Stage3_FinalAbilityName);
+	Template.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_A10_Stage3_SelectAngle');
+	Template.Abilities.AddItem(class'X2Ability_StrafingRun'.default.StrafingRun_A10_Stage4_FinalAbilityName);
 
 	// This all the resources; sounds, animations, models, physics, the works.
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_StrafingRun_A10_CV";

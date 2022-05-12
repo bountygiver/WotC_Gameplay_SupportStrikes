@@ -10,7 +10,7 @@ var config array<ResourceCost>	MortarStrike_HE_ResourceCost;
 var config array<ResourceCost>	MortarStrike_SMK_ResourceCost;
 var config array<ResourceCost>	Recon_T1_ResourceCost;
 var config array<ResourceCost>	HeliDropIn_ResourceCost;
-var config array<ResourceCost>	PrecisionStrike_A10_ResourceCost;
+var config array<ResourceCost>	StrafingRun_A10_ResourceCost;
 var config array<ResourceCost>	IonCannon_ResourceCost;
 
 static function array<X2DataTemplate> CreateTemplates()
@@ -24,7 +24,7 @@ static function array<X2DataTemplate> CreateTemplates()
 	//Air-to-Ground or General Aircraft Supports
 	Templates.AddItem(GTSUnlock_Airborne_Def_HeliDropIn_T1());
 	//Templates.AddItem(GTSUnlock_Airborne_Def_AWACS_T1());
-	Templates.AddItem(GTSUnlock_Airborne_Off_PrecisionStrike_A10_T1());
+	Templates.AddItem(GTSUnlock_Airborne_Off_StrafingRun_A10_T1());
 	//Orbital Weapon Platforms
 	Templates.AddItem(GTSUnlock_Orbital_Off_IonCannon_T1());
 
@@ -99,7 +99,7 @@ static function X2SupportStrikeUnlockTemplate GTSUnlock_Airborne_Def_HeliDropIn_
 	return Template;
 }
 
-static function X2SupportStrikeUnlockTemplate GTSUnlock_Airborne_Off_PrecisionStrike_A10_T1()
+static function X2SupportStrikeUnlockTemplate GTSUnlock_Airborne_Off_StrafingRun_A10_T1()
 {
 	local X2SupportStrikeUnlockTemplate Template;
 
@@ -111,7 +111,7 @@ static function X2SupportStrikeUnlockTemplate GTSUnlock_Airborne_Off_PrecisionSt
 	Template.AbilityName = 'Ability_Support_Air_Off_StrafingRun_A10_Stage1';
 
 	// Cost
-	ModifyResourceCost(Template, default.PrecisionStrike_A10_ResourceCost);
+	ModifyResourceCost(Template, default.StrafingRun_A10_ResourceCost);
 	
 	return Template;
 }
