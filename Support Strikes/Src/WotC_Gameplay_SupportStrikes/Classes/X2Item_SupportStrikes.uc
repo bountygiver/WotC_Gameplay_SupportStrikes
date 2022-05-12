@@ -74,7 +74,8 @@ static function X2DataTemplate CreateSupport_Land_Offensive_MortarStrike_HE_T1_W
 
 	Template.InventorySlot = eInvSlot_Utility;
 	Template.Abilities.AddItem('Ability_Support_Land_Off_MortarStrike_HE_Stage1');
-	Template.Abilities.AddItem('Ability_Support_Land_Off_MortarStrike_HE_Stage2');
+	Template.Abilities.AddItem(class'X2Ability_MortarStrikes'.default.MortarStrike_Stage2_HE_TriggerAbilityName);
+	Template.Abilities.AddItem(class'X2Ability_MortarStrikes'.default.MortarStrike_Stage2_HE_ProjectileAbilityName);
 
 	// This all the resources; sounds, animations, models, physics, the works.
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_MortarStrike_CV";
@@ -110,7 +111,8 @@ static function X2DataTemplate CreateSupport_Land_Defensive_MortarStrike_SMK_T1_
 
 	Template.InventorySlot = eInvSlot_Utility;
 	Template.Abilities.AddItem('Ability_Support_Land_Def_MortarStrike_SMK_Stage1');
-	Template.Abilities.AddItem('Ability_Support_Land_Def_MortarStrike_SMK_Stage2');
+	Template.Abilities.AddItem(class'X2Ability_MortarStrikes'.default.MortarStrike_Stage2_SMK_TriggerAbilityName);
+	Template.Abilities.AddItem(class'X2Ability_MortarStrikes'.default.MortarStrike_Stage2_SMK_ProjectileAbilityName);
 
 	// This all the resources; sounds, animations, models, physics, the works.
 	Template.GameArchetype = "ZZZ_SupportStrike_Data.Archetypes.WP_MortarStrike_Smoke_CV";
