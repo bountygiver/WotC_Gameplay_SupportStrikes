@@ -40,8 +40,9 @@ static function bool AbilityTagExpandHandler(string InString, out string OutStri
 
 	switch(Type)
 	{
+	// Inverse so it looks positive when the HitMod is negative
 	case 'MORTARSTRIKE_SMK_HITMOD':
-		OutString = string(class'X2Ability_MortarStrikes'.default.MortarStrike_SMK_HitMod);
+		OutString = string(-1 * class'X2Ability_MortarStrikes'.default.MortarStrike_SMK_HitMod);
 		return true;
 	case 'MORTARSTRIKE_SMK_AIMMOD':
 		OutString = string(class'X2Ability_MortarStrikes'.default.MortarStrike_SMK_AimMod);
@@ -430,9 +431,13 @@ static function GetSupportStrikeHQEvents(out array<HQEvent> arrEvents)
 static function bool AbilityTagExpandHandler_CH(string InString, out string OutString, Object ParseObj, Object StrategyParseOb, XComGameState GameState)
 {
 	local XComGameState_Ability					AbilityState;
+	local XComGameStateHistory					History;
+	local XComGameState_Effect					EffectState;
+	local XComGameState_Unit					TargetUnitState;
 	local name									Type;
 	local X2SupportStrikeUnlockTemplate			GTSUnlockTemplate;
 
+	History = `XCOMHISTORY;
 	Type = name(InString);
 
 	switch (Type)
@@ -443,16 +448,36 @@ static function bool AbilityTagExpandHandler_CH(string InString, out string OutS
 			if (AbilityState != none)
 			{
 				BuildDynamicIntelCost(OutString, AbilityState.GetMyTemplateName(), true);
-				return true;
 			}
 			
 			GTSUnlockTemplate = X2SupportStrikeUnlockTemplate(ParseObj);
 			if (GTSUnlockTemplate != none)
 			{
 				BuildDynamicIntelCost(OutString, GTSUnlockTemplate.AbilityName, true);
-				return true;
 			}
-			break;	
+			return true;
+		case 'STRIKE_STRAFINGRUN_A10_STAGE2_DURATION':
+			OutString = "--";
+			EffectState = XComGameState_Effect(ParseObj);
+			if (EffectState != none)
+			{
+				OutString = string(EffectState.iTurnsRemaining);
+			}
+
+			AbilityState = XComGameState_Ability(ParseObj);
+			if (AbilityState != None)
+			{
+				TargetUnitState = XComGameState_Unit(History.GetGameStateForObjectID(AbilityState.OwnerStateObject.ObjectID));
+				if (TargetUnitState == none)
+					return true;
+
+				EffectState = TargetUnitState.GetUnitAffectedByEffectState(class'X2Ability_StrafingRun'.default.StrafingRun_A10_Stage3_EffectName);
+				if (EffectState == none)
+					return true;
+
+				OutString = string(EffectState.iTurnsRemaining);
+			}
+			return true;
 	}
 	return false;
 }
@@ -462,20 +487,28 @@ static function BuildDynamicIntelCost(out string strDescription, name TemplateNa
 {	
 	local XComGameStateHistory					History;
 	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
-	local int									Idx, i;
+	local int									Idx, i, Cost;
 
 	History = `XCOMHISTORY;
-	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager', false));
+
+	if (SupportStrikeMgr == none)
+	{
+		strDescription = "";
+		return;
+	}
 
 	strDescription = "[";
 	Idx = SupportStrikeMgr.GetCurrentStrikeUsage(TemplateName);
 
 	for (i = 0; i < SupportStrikeMgr.StrikeCurrentMonthUsage[Idx].MaximumCap; ++i)
 	{
+		Cost = SupportStrikeMgr.CalculateStrikeCost_Simple(TemplateName,, i, 0);
+
 		if ((i == SupportStrikeMgr.StrikeCurrentMonthUsage[Idx].Usage) && bHighlightCurrentUsage)
-			strDescription $= "<font color='#27aae1'><b>" $ string(SupportStrikeMgr.CalculateStrikeCost_Simple(TemplateName,, i, 0)) $ "</b></font>";
+			strDescription $= "<font color='#27aae1'><b>" $ Cost $ "</b></font>";
 		else
-			strDescription $= string(SupportStrikeMgr.CalculateStrikeCost_Simple(TemplateName,, i, 0));
+			strDescription $= string(Cost);
 
 		//If we aren't on the second to last, or last iterator, make a comma
 		if (i < (SupportStrikeMgr.StrikeCurrentMonthUsage[Idx].MaximumCap - 1))
