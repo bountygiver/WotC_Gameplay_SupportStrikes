@@ -103,6 +103,15 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\ApplyEffectParametersObject.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\SmokeMortarInstancedTileActor.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\SmokeMortarInstancedTileComponent.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\SmokeMortarTileListener.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\UIPopups_SupportStrikes.uc">
       <SubType>Content</SubType>
     </Content>
@@ -160,6 +169,9 @@
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_RemoveViewer.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_SelectNextActiveUnitTriggerUI.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Action_StartStopSoundCue.uc">
       <SubType>Content</SubType>
     </Content>
@@ -167,6 +179,12 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Character_SupportStrikes.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_AbilityCharges.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_CS_UnitType.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Condition_HeliDropIn.uc">
@@ -182,6 +200,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_ApplySmokeMortarToWorld.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_ApplyWeaponDamage_Line.uc">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WotC_Gameplay_SupportStrikes\Classes\X2Effect_DummyTargetUnit.uc">
