@@ -15,7 +15,7 @@ var config array<MatineeFireInfo> A10_MatineeCommentPrefixes;
 static function bool TypicalSupportStrike_AlternateFriendlyName(out string AlternateDescription, XComGameState_Ability AbilityState, StateObjectReference TargetRef)
 {
 	local string								FriendlyName, FinalHexClr;
-	local int									IntelCost, IntelHQ;
+	local int									IntelCost, IntelHQ, CurrentUsageIdx;
 	local XComGameStateHistory					History;
 	local XComGameState_HeadquartersXCom		XComHQ;
 	local XComGameState_SupportStrikeManager	SupportStrikeMgr;
@@ -34,15 +34,18 @@ static function bool TypicalSupportStrike_AlternateFriendlyName(out string Alter
 	IntelHQ = XComHQ.GetIntel();
 
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
+	CurrentUsageIdx = SupportStrikeMgr.GetCurrentStrikeUsage(AbilityState.GetMyTemplateName());
+
 	IntelCost = SupportStrikeMgr.CalculateStrikeCost_Simple(AbilityState.GetMyTemplateName());
+	`LOG("Current Intel Cost: " $ IntelCost $ ", Current Usage: " $ SupportStrikeMgr.StrikeCurrentMonthUsage[CurrentUsageIdx].Usage, true, 'WotC_Gameplay_SupportStrikes');
 
 	FinalHexClr = default.HexColor_Good;
 
 	// If the player does not have enough intel for the support strike, use red
 	if ( IntelHQ < IntelCost )
 		FinalHexClr = default.HexColor_Bad;
-	// If using the support strike reduces the intel cost to below the current cost, mark it yellow
-	else if ( ( IntelHQ - SupportStrikeMgr.CalculateStrikeCost_Simple(AbilityState.GetMyTemplateName(),,1) ) < IntelCost )
+	// If the player uses this support strike, and the result cost ends up below this current cost, mark it yellow
+	else if ( ( IntelHQ - SupportStrikeMgr.CalculateStrikeCost_Simple(AbilityState.GetMyTemplateName(),,  SupportStrikeMgr.StrikeCurrentMonthUsage[CurrentUsageIdx].Usage + 1) ) < IntelCost )
 		FinalHexClr = default.HexColor_Caution;
 
 	//Create the string
@@ -53,7 +56,7 @@ static function bool TypicalSupportStrike_AlternateFriendlyName(out string Alter
 //
 // Modify the Support Strike Gamestate so we can enable Vague Orders on XCom's side
 // 
-simulated function XComGameState TypicalSupportStrike_BuildGameState( XComGameStateContext Context )
+static function XComGameState TypicalSupportStrike_BuildGameState( XComGameStateContext Context )
 {
 	local XComGameStateHistory					History;
 	local XComGameState_HeadquartersXCom		XComHQ;
@@ -62,15 +65,15 @@ simulated function XComGameState TypicalSupportStrike_BuildGameState( XComGameSt
 	local XComGameStateContext_Ability			AbilityContext;
 	local XComGameState_Ability					AbilityState;
 
-	History = `XCOMHISTORY;
-	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
-
 	//Do all the normal effect processing
 	NewGameState = TypicalAbility_BuildGameState(Context);
 
 	// Stop here if we're in tactical since the next part requires the player be in a campaign
 	if (class'X2TacticalGameRulesetDataStructures'.static.TacticalOnlyGameMode(true))
 		return NewGameState;
+
+	History = `XCOMHISTORY;
+	XComHQ = XComGameState_HeadquartersXCom(History.GetSingleGameStateObjectForClass(class'XComGameState_HeadquartersXCom'));
 
 	SupportStrikeMgr = XComGameState_SupportStrikeManager(History.GetSingleGameStateObjectForClass(class'XComGameState_SupportStrikeManager'));
 

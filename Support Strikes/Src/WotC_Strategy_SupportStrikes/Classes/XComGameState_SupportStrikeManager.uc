@@ -117,7 +117,7 @@ simulated function InitializeCurrentUsage()
 	local SupportStrikeStruct ResourceCostScaleData;
 
 	// If the dataset is empty, populate it
-	if (StrikeCurrentMonthUsage.Length == 0)
+	if (StrikeCurrentMonthUsage.Length == 0 && StrikeOriginalMonthUsage.Length == 0)
 	{
 		`LOG("Repopulating StrikeCurrentMonthUsage...",,'WotC_Strategy_SupportStrikes');
 		foreach SupportStrikeData(ResourceCostScaleData)
@@ -126,7 +126,7 @@ simulated function InitializeCurrentUsage()
 			Data.Usage			= 0;
 			Data.MaximumCap		= ResourceCostScaleData.MaximumCap;
 
-			`LOG("[" $ GetFuncName() $ "] " $ Data.TemplateName $ ", " $ Data.Usage $ " ," $ Data.MaximumCap ,,'WotC_Strategy_SupportStrikes');
+			`LOG("[" $ GetFuncName() $ "] " $ Data.TemplateName $ ", Current Usage: " $ Data.Usage $ ", Maximum: " $ Data.MaximumCap ,,'WotC_Strategy_SupportStrikes');
 
 			StrikeCurrentMonthUsage.AddItem(Data);
 		}
@@ -271,7 +271,7 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 
 // Calculates the cost of the support strike
 // Returns a value or -1 if error
-simulated function int GrabStrikeCost(name TemplateName, optional bool VerifyWithCurrentMonth = false)
+simulated function int GrabStrikeCost(name AbilityTemplateName, optional bool VerifyWithCurrentMonth = false)
 {
 	local int Idx;
 
@@ -282,7 +282,7 @@ simulated function int GrabStrikeCost(name TemplateName, optional bool VerifyWit
 	}
 
 	//Search for the Template within our array
-	Idx = SupportStrikeData.Find('AbilityTemplateName', TemplateName);
+	Idx = SupportStrikeData.Find('AbilityTemplateName', AbilityTemplateName);
 
 	//Handle missing index case
 	if (Idx == INDEX_NONE)
@@ -300,43 +300,60 @@ simulated function int GrabStrikeCost(name TemplateName, optional bool VerifyWit
 
 // Calculates the cost of the support strike, only calculates a basic integer
 // Returns a value or -1 if error
-simulated function int CalculateStrikeCost_Simple(name TemplateName, optional SupportStrikeStruct ResourceCost, optional int Usage = 0, optional int CheckCurrentUsage = 1)
+simulated function int CalculateStrikeCost_Simple(name AbilityTemplateName, optional SupportStrikeStruct ResourceCost, optional int ForceUsage = -1, optional int CheckCurrentUsage = 1)
 {
-	local int Idx;
-	//Get our data
-	if (ResourceCost.AbilityTemplateName == '')
+	local int Idx, ThisMonthIdx, ResourceMulti, ResourceAdd, FinalUsage;
+	local CurrentMonthStrikeUsage ThisMonthUsage;
+
+	// Requires an ability for this to work!
+	if ( AbilityTemplateName == '')
+		return -1;
+
+	if (ResourceCost.AbilityTemplateName != AbilityTemplateName)
 	{
-		Idx = GrabStrikeCost(TemplateName, true);
+		//Get our data
+		Idx = GrabStrikeCost(AbilityTemplateName, true);
 		
 		//If above function fails, return -1
 		if (Idx == INDEX_NONE)
 		{
-			`LOG("[" $ GetFuncName() $ "] Error, could not find " $ TemplateName, class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Strategy_SupportStrikes');
+			`LOG("[" $ GetFuncName() $ "] Error, could not find " $ AbilityTemplateName, class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Strategy_SupportStrikes');
 			return Idx;
 		}
 
 		ResourceCost = SupportStrikeData[Idx];
 	}
 
+	ThisMonthIdx = GetCurrentStrikeUsage(AbilityTemplateName);
+
+	if (ForceUsage > -1)
+		FinalUsage = ForceUsage;
+	else
+		FinalUsage = StrikeCurrentMonthUsage[ThisMonthIdx].Usage;
+
 	// For calculating costs in the future, make sure not to exceed our limit
-	if ( (Usage + StrikeCurrentMonthUsage[Idx].Usage) > StrikeCurrentMonthUsage[Idx].MaximumCap )
-		Usage = StrikeCurrentMonthUsage[Idx].MaximumCap;
+	FinalUsage = Min(FinalUsage, StrikeCurrentMonthUsage[ThisMonthIdx].MaximumCap);
 	
-	//Perform the calculation
-	return ( ResourceCost.StrikeCost.ResourceCosts[0].Quantity + (ResourceCost.StrikeCost.ResourceCosts[0].Quantity * (ResourceCost.Multiplier * ((StrikeCurrentMonthUsage[Idx].Usage * CheckCurrentUsage) + Usage))) + (ResourceCost.Addition * (StrikeCurrentMonthUsage[Idx].Usage + Usage)) );
+	//Perform the calculation, round to the nearest whole number
+	ResourceMulti = ResourceCost.StrikeCost.ResourceCosts[0].Quantity * (ResourceCost.Multiplier * FinalUsage);
+	ResourceAdd = ResourceCost.Addition * FinalUsage;
+
+	return	 Round( ResourceCost.StrikeCost.ResourceCosts[0].Quantity + ResourceMulti + ResourceAdd );
+
+	//return ( ResourceCost.StrikeCost.ResourceCosts[0].Quantity + (ResourceCost.StrikeCost.ResourceCosts[0].Quantity * (ResourceCost.Multiplier * ((StrikeCurrentMonthUsage[Idx].Usage * CheckCurrentUsage) + Usage))) + (ResourceCost.Addition * (StrikeCurrentMonthUsage[Idx].Usage + Usage)) );
 }
 
 // Calculates the cost of the support strike and returns a StrategyCost object
-simulated function StrategyCost CalculateStrikeCost_StrategyCost(name TemplateName)
+simulated function StrategyCost CalculateStrikeCost_StrategyCost(name AbilityTemplateName)
 {
 	local int				Idx;
 	local StrategyCost		RetStrCost;
 
-	Idx = GrabStrikeCost(TemplateName);
+	Idx = GrabStrikeCost(AbilityTemplateName);
 
 	//Create strategy cost object
 	RetStrCost = SupportStrikeData[Idx].StrikeCost;
-	RetStrCost.ResourceCosts[0].Quantity = CalculateStrikeCost_Simple(TemplateName, SupportStrikeData[Idx]);
+	RetStrCost.ResourceCosts[0].Quantity = CalculateStrikeCost_Simple(AbilityTemplateName, SupportStrikeData[Idx]);
 
 	return RetStrCost;
 }
@@ -357,24 +374,21 @@ simulated function int GetCurrentStrikeUsage(name AbilityTemplateName)
 	return Idx;
 }
 
-simulated function AdjustStrikeUsage(name TemplateName)
+simulated function AdjustStrikeUsage(name AbilityTemplateName)
 {
 	local int				Idx;
 	local int				UsageCount;
 
-	if (TemplateName == '')
+	if (AbilityTemplateName == '')
 	{
 		`LOG("[" $ GetFuncName() $ "] ERROR, TemplateName was empty!" , class'X2Helpers_MiscFunctions'.static.Log(,true),'WotC_Strategy_SupportStrikes');
 		return;
 	}
 
-	Idx = GetCurrentStrikeUsage(TemplateName);
-
-	UsageCount = StrikeCurrentMonthUsage[Idx].Usage + 1;
+	Idx = GetCurrentStrikeUsage(AbilityTemplateName);
 
 	// Check if the usage has hit the cap, if not, assign the value to the usage
-	if (UsageCount <= StrikeCurrentMonthUsage[Idx].MaximumCap)
-		StrikeCurrentMonthUsage[Idx].Usage = UsageCount;
+	StrikeCurrentMonthUsage[Idx].Usage = Min(StrikeCurrentMonthUsage[Idx].Usage + 1, StrikeCurrentMonthUsage[Idx].MaximumCap);
 
 	`LOG("[" $ GetFuncName() $ "] " $ StrikeCurrentMonthUsage[Idx].TemplateName $ " usage is now at " $ StrikeCurrentMonthUsage[Idx].Usage $ " out of " $ StrikeCurrentMonthUsage[Idx].MaximumCap , class'X2Helpers_MiscFunctions'.static.Log(true),'WotC_Strategy_SupportStrikes');
 }
