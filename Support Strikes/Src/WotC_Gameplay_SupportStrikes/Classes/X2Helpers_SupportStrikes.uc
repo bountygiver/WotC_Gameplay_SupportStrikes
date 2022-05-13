@@ -11,6 +11,7 @@ struct DLCAnimSetAdditions
 var config Array<DLCAnimSetAdditions> AnimSetAdditions;
 
 var config array<name>					AppendSupportStrikesCinematicToUnits;
+var config array<name>					DetectMovement_EffectImmunities;		//If the target unit we're spotting has these effects, do not trigger!
 
 static function OnPostCharacterTemplatesCreated()
 {
@@ -37,4 +38,75 @@ static function OnPostCharacterTemplatesCreated()
 			}
 		}
 	}
+}
+
+static function OnPostAbilityTemplatesCreated()
+{
+	local X2AbilityTemplateManager				AbilityMgr;
+	local array<X2AbilityTemplate>				TemplateAllDifficulties;
+	local array<name>							AblilityTemplateNames;
+	local name							        IterName;
+	local X2AbilityTemplate						AbilityTemplate;
+
+	local name 									EffectImmunities;
+	local X2Condition_UnitEffects				UnitEffects;
+	
+	local X2Condition							Condition;
+	local X2Condition_UnitEffects				UnitEffectCondition;
+	local bool									bEffectFound;
+
+	AbilityMgr = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager();
+	//AbilityMgr.GetTemplateNames(AblilityTemplateNames);
+
+	AblilityTemplateNames.AddItem('DetectMovingUnit');
+
+	foreach AblilityTemplateNames(IterName)
+	{
+ 		AbilityMgr.FindAbilityTemplateAllDifficulties(IterName, TemplateAllDifficulties);
+		foreach TemplateAllDifficulties(AbilityTemplate)
+		{
+			switch (IterName)
+			{
+				case 'DetectMovingUnit':
+					UnitEffects = new class'X2Condition_UnitEffects';
+					
+					foreach	default.DetectMovement_EffectImmunities(EffectImmunities)
+					{
+						UnitEffects.AddExcludeEffect(EffectImmunities, 'AA_UnitIsImmune');
+					}
+
+					AbilityTemplate.AbilityTargetConditions.AddItem(UnitEffects);
+					break;
+				default:
+					break;
+			}
+
+			// Disable abilities if a unit is in smoke
+			if (class'X2Ability_MortarStrikes'.default.MortarStrike_SMK_EnableAlphaSmokeEffect &&
+				class'X2Ability_MortarStrikes'.default.MortarStrike_SMK_AbilitiesToDisableWhileInSmoke.Find(IterName) != INDEX_NONE)
+			{
+				bEffectFound = false;
+
+				foreach AbilityTemplate.AbilityShooterConditions(Condition)
+				{
+					UnitEffectCondition = X2Condition_UnitEffects(Condition);
+
+					// Only the first one is valid
+					if ( UnitEffectCondition != none )
+					{
+						UnitEffectCondition.AddExcludeEffect(class'X2Effect_SmokeMortar'.default.EffectName, 'AA_AbilityUnavailable');
+						bEffectFound = true;
+						break;
+					}
+				}
+
+				if (!bEffectFound)
+				{
+					UnitEffectCondition = new class'X2Condition_UnitEffects';
+					UnitEffectCondition.AddExcludeEffect(class'X2Effect_SmokeMortar'.default.EffectName, 'AA_AbilityUnavailable');
+					AbilityTemplate.AbilityShooterConditions.AddItem(UnitEffectCondition);
+				}
+			}
+        }
+    }
 }
