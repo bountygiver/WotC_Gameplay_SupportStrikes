@@ -6,11 +6,8 @@
 
 class X2Effect_SpawnDummyTarget extends X2Effect_SpawnUnit;
 
-var name GiveItemName;
-
 function vector GetSpawnLocation(const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState)
 {
-
 	if(ApplyEffectParameters.AbilityInputContext.TargetLocations.Length == 0)
 	{
 		`LOG("Attempting to create X2Effect_SpawnDummyTarget without a target location!",, 'IRI_SUPPORT_STRIKES');
@@ -26,56 +23,18 @@ function ETeam GetTeam(const out EffectAppliedData ApplyEffectParameters)
 	return GetSourceUnitsTeam(ApplyEffectParameters, true);
 }
 
-
-//		Both of these seem to be never called.
-//	Remove all abilities except 1, and make the ability the Select 2
-/*
-simulated function ModifyAbilitiesPreActivation(StateObjectReference NewUnitRef, out array<AbilitySetupData> AbilityData, XComGameState NewGameState)
+function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XComGameState_Unit EffectTargetUnit, XComGameState NewGameState, XComGameState_Effect EffectGameState)
 {
-	local AbilitySetupData SetupData;
-
-	`LOG("Modifying abilities for newly-spawned Dummy Target",, 'IRI_SUPPORT_STRIKES');
-
-	SetupData.TemplateName = 'Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle';
-	SetupData.Template = class'X2AbilityTemplateManager'.static.GetAbilityTemplateManager().FindAbilityTemplate('Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
-	SetupData.SourceWeaponRef.ObjectID = 0;
-	SetupData.SourceAmmoRef.ObjectID = 0;
-
-	AbilityData.AddItem(SetupData);
+	super.TriggerSpawnEvent(ApplyEffectParameters, EffectTargetUnit, NewGameState, EffectGameState);
 }
-*/
-/*
-simulated function ModifyItemsPreActivation(StateObjectReference NewUnitRef, XComGameState NewGameState)
-{
-	local XComGameState_Unit	UnitState;
-	local XComGameState_Item	ItemState;
-	local X2EquipmentTemplate	ItemTemplate;
-
-	// Remove all utility, secondary weapon, and heavy weapon items from the Ghost
-	UnitState = XComGameState_Unit(NewGameState.GetGameStateForObjectID(NewUnitRef.ObjectID));
-
-	if (GiveItemName != '')
-	{
-		ItemTemplate = X2EquipmentTemplate(class'X2ItemTemplateManager'.static.GetItemTemplateManager().FindItemTemplate(GiveItemName));
-		`LOG("Adding item to Spawned Unit: " @ GiveItemName @ ItemTemplate.InventorySlot,, 'IRI_SUPPORT_STRIKES');
-
-		if (ItemTemplate != none)
-		{
-			ItemState = ItemTemplate.CreateInstanceFromTemplate(NewGameState);
-			
-			if (UnitState.AddItemToInventory(ItemState, ItemTemplate.InventorySlot, NewGameState))
-			{
-				`LOG("Success",, 'IRI_SUPPORT_STRIKES');
-			}
-			else `LOG("Fail",, 'IRI_SUPPORT_STRIKES');
-		}
-	}
-
-}*/
 
 function OnSpawnComplete(const out EffectAppliedData ApplyEffectParameters, StateObjectReference NewUnitRef, XComGameState NewGameState, XComGameState_Effect NewEffectState)
 {
-	local XComGameState_Unit SelfUnit, SourceUnitGameState;
+	local XComGameState_Unit 	SelfUnit, SourceUnitGameState;
+	local X2EventManager		EventManager;
+	local EffectAppliedData 	NewEffectParams;
+	local X2Effect 				SireZombieEffect;
+	local Object				SelfObject;
 
 	SourceUnitGameState = XComGameState_Unit(NewGameState.GetGameStateForObjectID(ApplyEffectParameters.TargetStateObjectRef.ObjectID));
 	if( SourceUnitGameState == none)
@@ -83,10 +42,13 @@ function OnSpawnComplete(const out EffectAppliedData ApplyEffectParameters, Stat
 		SourceUnitGameState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ApplyEffectParameters.TargetStateObjectRef.ObjectID, eReturnType_Reference));
 	}
 
-	SelfUnit = XComGameState_Unit(NewGameState.GetGameStateForObjectID(NewUnitRef.ObjectID));
+	if (NewUnitRef.ObjectID == 0)
+	{
+		`RedScreenOnce(GetFuncName() $ ": Unit was not created properly. This may cause the ability to break!");
+		return;
+	}
 
-	SelfUnit.ActionPoints.Length = 0;
-	SelfUnit.SetUnitFloatValue('Support_Strike_Dummy_Target_SourceUnitID', SourceUnitGameState.ObjectID, eCleanup_BeginTactical);
+	SelfUnit = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', NewUnitRef.ObjectID));
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// X2Effect_SpawnMimicBeacon:
@@ -95,12 +57,53 @@ function OnSpawnComplete(const out EffectAppliedData ApplyEffectParameters, Stat
 	// The mimic beacon won't be revealed properly unless it's considered to be concealed in the first place.
 	// ----------------------------------------------------------------------------------------------------------------
 
+	//SelfUnit.bRequiresVisibilityUpdate = true;
+
 	if (SourceUnitGameState.IsSquadConcealed())
 		SelfUnit.SetIndividualConcealment(true, NewGameState); //Don't allow the mimic beacon to be non-concealed in a concealed squad.
+
+	// Nullify any Concealment Event Listeners so it cannot reveal itself to the enemy
+	SelfObject = SelfUnit;
+	EventManager = `XEVENTMGR;
+//
+	EventManager.UnregisterFromEvent(SelfObject, 'ObjectMoved', ELD_OnStateSubmitted);		
+	EventManager.UnregisterFromEvent(SelfObject, 'UnitMoveFinished', ELD_OnStateSubmitted);
+//
+//	// Better safe than sorry
+	EventManager.UnregisterFromEvent(SelfObject, 'EffectBreakUnitConcealment', ELD_OnStateSubmitted);
+
+	SelfUnit.bRequiresVisibilityUpdate = true;
+
+	// Register an event listener that destroys this unit at the end of the players turn if they have not triggered the second ability
+
+	// Create a Sire link effect to the unit that spawned this effect
+	// Link the source and zombie
+//	NewEffectParams = ApplyEffectParameters;
+//	NewEffectParams.EffectRef.ApplyOnTickIndex = INDEX_NONE;
+//	NewEffectParams.EffectRef.LookupType = TELT_AbilityTargetEffects;
+//	NewEffectParams.EffectRef.SourceTemplateName = class'X2Ability_Sectoid'.default.SireZombieLinkName;
+//	NewEffectParams.EffectRef.TemplateEffectLookupArrayIndex = 0;
+//	NewEffectParams.TargetStateObjectRef = SelfUnit.GetReference();
+//
+//	SireZombieEffect = class'X2Effect'.static.GetX2Effect(NewEffectParams.EffectRef);
+//	SireZombieEffect.ApplyEffect(NewEffectParams, SelfUnit, NewGameState);
+}
+
+function AddSpawnVisualizationsToTracks(XComGameStateContext Context, XComGameState_Unit SpawnedUnit, out VisualizationActionMetadata SpawnedUnitTrack,
+										XComGameState_Unit EffectTargetUnit, optional out VisualizationActionMetadata EffectTargetUnitTrack)
+{
+	local X2Action_SelectNextActiveUnitTriggerUI 	SelectUnitAction;
+
+	// Sync up visualizer. This will unhide the unit
+//	class'X2Action_SyncVisualizer'.static.AddToVisualizationTree(SpawnedUnitTrack, Context, false, SpawnedUnitTrack.LastActionAdded);
+	class'X2Action_ShowSpawnedUnit'.static.AddToVisualizationTree(SpawnedUnitTrack, Context, false, SpawnedUnitTrack.LastActionAdded);
+
+	// Force the Tactical Controller to switch to this unit
+	SelectUnitAction = X2Action_SelectNextActiveUnitTriggerUI(class'X2Action_SelectNextActiveUnitTriggerUI'.static.AddToVisualizationTree(SpawnedUnitTrack, Context, false, SpawnedUnitTrack.LastActionAdded));
+	SelectUnitAction.TargetID = SpawnedUnitTrack.StateObject_NewState.ObjectID;
 }
 
 defaultproperties
 {
-	UnitToSpawnName="Support_Strikes_Dummy_Target"
 	bKnockbackAffectsSpawnLocation=false
 }

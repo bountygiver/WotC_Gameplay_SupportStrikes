@@ -5,83 +5,66 @@
 //
 class X2Effect_DummyTargetUnit extends X2Effect_Persistent config(GameCore);
 
+simulated protected function OnEffectAdded(const out EffectAppliedData ApplyEffectParameters, XComGameState_BaseObject kNewTargetState, XComGameState NewGameState, XComGameState_Effect NewEffectState)
+{
+	super.OnEffectAdded(ApplyEffectParameters, kNewTargetState, NewGameState, NewEffectState);
+
+	//Effects that change visibility must actively indicate it
+	kNewTargetState.bRequiresVisibilityUpdate = true;
+}
+
 function ModifyTurnStartActionPoints(XComGameState_Unit UnitState, out array<name> ActionPoints, XComGameState_Effect EffectState)
 {
-	ActionPoints.Length = 1;
-}
+	//`LOG("EffectState FullTurnsTicked: " $ EffectState.FullTurnsTicked $ ", Initial ActionPoints: " $ ActionPoints.Length, true, 'WotC_Gameplay_SupportStrikes');
 
-simulated function OnEffectRemoved(const out EffectAppliedData ApplyEffectParameters, XComGameState NewGameState, bool bCleansed, XComGameState_Effect RemovedEffectState)
-{
-	local XComGameState_Unit UnitSelf;
+	ActionPoints.Length = 0;
 
-	super.OnEffectRemoved(ApplyEffectParameters, NewGameState, bCleansed, RemovedEffectState);
-
-	UnitSelf = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(ApplyEffectParameters.TargetStateObjectRef.ObjectID));
-
-	if( UnitSelf != None )
+	if (EffectState.FullTurnsTicked == 0)
 	{
-		//The unit is removed from the gamestate and other checks but still exists
-		UnitSelf.RemoveUnitFromPlay();
+		ActionPoints.Length = 0;
+		ActionPoints.AddItem(class'X2CharacterTemplateManager'.default.StandardActionPoint);
 	}
-//	if( UnitSelf != None )
-//	{
-//		UnitSelf = XComGameState_Unit(NewGameState.ModifyStateObject(class'XComGameState_Unit', UnitSelf.ObjectID));
-//
-//		// Remove the dead unit from play
-//		`XEVENTMGR.TriggerEvent('UnitRemovedFromPlay', UnitSelf, UnitSelf, NewGameState);
-//	}
+	
+	//`LOG("Final ActionPoints: " $ ActionPoints.Length, true, 'WotC_Gameplay_SupportStrikes');
 }
 
-simulated function AddX2ActionsForVisualization_Removed(XComGameState VisualizeGameState, out VisualizationActionMetadata ActionMetadata, const name EffectApplyResult, XComGameState_Effect RemovedEffect)
+function bool ProvidesDamageImmunity(XComGameState_Effect EffectState, name DamageType) { return true; } // Cannot be damaged by anything
+function bool CanAbilityHitUnit(name AbilityName) { return false; } // No hits 
+function bool DoesEffectAllowUnitToBleedOut(XComGameState_Unit UnitState) { return false; }
+function bool DoesEffectAllowUnitToBeLooted(XComGameState NewGameState, XComGameState_Unit UnitState) { return false; }
+function EGameplayBlocking ModifyGameplayPathBlockingForTarget(const XComGameState_Unit UnitState, const XComGameState_Unit TargetUnit) { return eGameplayBlocking_DoesNotBlock; }
+function EGameplayBlocking ModifyGameplayDestinationBlockingForTarget(const XComGameState_Unit UnitState, const XComGameState_Unit TargetUnit) { return ModifyGameplayPathBlockingForTarget(UnitState, TargetUnit); }
+function bool AreMovesVisible() { return false; }
+function ModifyGameplayVisibilityForTarget(out GameRulesCache_VisibilityInfo InOutVisibilityInfo, XComGameState_Unit SourceUnit, XComGameState_Unit TargetUnit)
 {
-	//local X2Action_MimicBeaconEnd MimicEndAction;
-	//local XComGameState_Unit UnitState;
+	// Invisible to everyone and allies to the enemy as to not break concealment
+	InOutVisibilityInfo.bVisibleGameplay			= false;
+	InOutVisibilityInfo.bVisibleBasic				= false;
+	InOutVisibilityInfo.bClearLOS					= false;
+	InOutVisibilityInfo.bVisibleFromDefault			= false;
+	InOutVisibilityInfo.bVisibleToDefault			= false;
+	InOutVisibilityInfo.bVisibleDefaultToDefault	= false;
+	InOutVisibilityInfo.bConcealedTrace				= false;
+	InOutVisibilityInfo.bTargetIsAlly				= true;
+	InOutVisibilityInfo.GameplayVisibleTags.AddItem('RemovedFromPlay');
+}
 
-	super.AddX2ActionsForVisualization_Removed(VisualizeGameState, ActionMetadata, EffectApplyResult, RemovedEffect);
+function EffectAddedCallback(X2Effect_Persistent PersistentEffect, const out EffectAppliedData ApplyEffectParameters, XComGameState_BaseObject kNewTargetState, XComGameState NewGameState)
+{
+	local XComGameState_Unit UnitState;
 
-	if (EffectApplyResult != 'AA_Success' || ActionMetadata.VisualizeActor == none)
+	UnitState = XComGameState_Unit(kNewTargetState);
+	if (UnitState != none)
 	{
-		return;
+		ModifyTurnStartActionPoints(UnitState, UnitState.ActionPoints, none);
 	}
-
-	//MimicEndAction = X2Action_MimicBeaconEnd(class'X2Action_MimicBeaconEnd'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-	class'X2Action_MimicBeaconEnd'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded);
-
-	//UnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState);
 }
 
-//simulated function AddX2ActionsForVisualization_Sync( XComGameState VisualizeGameState, out VisualizationActionMetadata ActionMetadata )
-//{
-////	local X2Action_PlayAnimation AnimationAction;
-//
-//	super.AddX2ActionsForVisualization_Sync(VisualizeGameState, ActionMetadata);
-//
-////	AnimationAction = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-////	AnimationAction.Params.AnimName = class'X2Ability_ItemGrantedAbilitySet'.default.MIMIC_BEACON_START_ANIM;
-////	AnimationAction.Params.BlendTime = 0.0f;
-//}
-
-function bool ProvidesDamageImmunity(XComGameState_Effect EffectState, name DamageType)
-{
-	return DamageType == 'poison' ||
-		   DamageType == 'fire' ||
-		   DamageType == 'acid' ||
-		   DamageType == class'X2Item_DefaultDamageTypes'.default.KnockbackDamageType ||
-		   DamageType == 'psi' ||
-		   DamageType == class'X2Item_DefaultDamageTypes'.default.ParthenogenicPoisonType ||
-		   DamageType == 'stun';
-}
-
-function bool CanAbilityHitUnit(name AbilityName)
-{
-	return false;
-}
-
-function bool DoesEffectAllowUnitToBleedOut(XComGameState_Unit UnitState) {return false; }
-function bool DoesEffectAllowUnitToBeLooted(XComGameState NewGameState, XComGameState_Unit UnitState) {return false; }
+function bool RetainIndividualConcealment(XComGameState_Effect EffectState, XComGameState_Unit UnitState) { return true; }
 
 DefaultProperties
 {
-	DuplicateResponse = eDupe_Ignore
+	EffectAddedFn=EffectAddedCallback
+//	DuplicateResponse = eDupe_Ignore
 	EffectName = "DummyTargetUnitEffect"
 }

@@ -29,12 +29,12 @@ static function X2CharacterTemplate Create_DummyTargetTemplate()
 
 	// Traversal Rules
 	CharTemplate.bCanUse_eTraversal_Normal = true;
-	CharTemplate.bCanUse_eTraversal_ClimbOver = true;
-	CharTemplate.bCanUse_eTraversal_ClimbOnto = true;
-	CharTemplate.bCanUse_eTraversal_ClimbLadder = true;
-	CharTemplate.bCanUse_eTraversal_DropDown = true;
+	CharTemplate.bCanUse_eTraversal_ClimbOver = false;
+	CharTemplate.bCanUse_eTraversal_ClimbOnto = false;
+	CharTemplate.bCanUse_eTraversal_ClimbLadder = false;
+	CharTemplate.bCanUse_eTraversal_DropDown = false;
 	CharTemplate.bCanUse_eTraversal_Grapple = false;
-	CharTemplate.bCanUse_eTraversal_Landing = true;
+	CharTemplate.bCanUse_eTraversal_Landing = false;
 	CharTemplate.bCanUse_eTraversal_BreakWindow = false;
 	CharTemplate.bCanUse_eTraversal_KickDoor = false;
 	CharTemplate.bCanUse_eTraversal_JumpUp = false;
@@ -42,6 +42,22 @@ static function X2CharacterTemplate Create_DummyTargetTemplate()
 	CharTemplate.bCanUse_eTraversal_BreakWall = false;
 	CharTemplate.bAppearanceDefinesPawn = false;
 	CharTemplate.bCanTakeCover = false;
+
+	CharTemplate.bForceAppearance = true;
+	CharTemplate.ForceAppearance.iArmorTint = -1;
+	CharTemplate.ForceAppearance.iArmorTintSecondary = -1;
+	CharTemplate.ForceAppearance.iAttitude = 0;
+	CharTemplate.ForceAppearance.iWeaponTint = -1;
+	CharTemplate.ForceAppearance.nmArms = '';
+	CharTemplate.ForceAppearance.nmFlag = '';
+	CharTemplate.ForceAppearance.nmHead = '';
+	CharTemplate.ForceAppearance.nmLegs = '';
+	CharTemplate.ForceAppearance.nmPawn = '';
+	CharTemplate.ForceAppearance.nmTorso = '';
+	CharTemplate.ForceAppearance.nmVoice = '';
+	CharTemplate.ForceAppearance.nmWeaponPattern = 'Pat_Nothing';
+
+	// No parts for this unit
 
 	CharTemplate.bSkipDefaultAbilities = true;
 
@@ -61,19 +77,9 @@ static function X2CharacterTemplate Create_DummyTargetTemplate()
 
 	CharTemplate.bDisplayUIUnitFlag = false;
 
-	CharTemplate.bNeverSelectable = true;
-	CharTemplate.bIsCosmetic = true;
-
-	//Leave a body at the very least for the stage 2 ability
-	CharTemplate.bDontClearRemovedFromPlay = true;
-
 	CharTemplate.DefaultLoadout = 'SupportStrikes_DummyTarget_Loadout';
 
-	CharTemplate.Abilities.AddItem('DummyTargetInitialize');
-//	CharTemplate.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
-
-	//CharTemplate.Abilities.AddItem('Ability_Support_Air_Off_StrafingRun_Stage1_SelectAngle');
-	//CharTemplate.Abilities.AddItem('Ability_Support_Land_Off_StrafingRun_A10_Stage2');
+	CharTemplate.Abilities.AddItem('DummyTargetIndicatorInitialize');
 	
 	return CharTemplate;
 }
