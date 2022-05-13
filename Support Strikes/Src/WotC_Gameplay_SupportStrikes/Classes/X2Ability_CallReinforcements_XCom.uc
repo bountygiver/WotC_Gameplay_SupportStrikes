@@ -111,6 +111,7 @@ static function X2DataTemplate CreateSupport_Air_Defensive_HeliDropIn_T1_Stage1(
 	MapCheck = new class'X2Condition_MapCheck';
 	Template.AbilityShooterConditions.AddItem(MapCheck);
 
+	Template.AbilityShooterConditions.AddItem(new class'X2Condition_ResourceCost');
 	/* END Shooter Conditions */
 
 	VisibilityCondition = new class'X2Condition_Visibility';
