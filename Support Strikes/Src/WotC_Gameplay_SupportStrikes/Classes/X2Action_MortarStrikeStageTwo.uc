@@ -71,11 +71,31 @@ function AddProjectiles(int ProjectileIndex, int InputOffset)
 	SourceLocation.X += World.WORLD_StepSize * InputOffset;
 	SourceLocation.Y += World.WORLD_StepSize * InputOffset;
 
+	AddWeaponCosmeticProjectile(SourceLocation, ImpactLocation, AbilityContext);
+}
 
-	Unit.AddBlazingPinionsProjectile(SourceLocation, ImpactLocation, AbilityContext);
+// External to XComUnitPawnNativeBase.uc. Allows us to spawn in the projectile without the need for a unit
+function AddWeaponCosmeticProjectile(vector SourceLocation, vector TargetLocation, XComGameStateContext_Ability AbilityContext)
+{
+	local XComWeapon WeaponEntity;
+	local XComUnitPawn UnitPawn;
+	local X2UnifiedProjectile NewProjectile;
+	local AnimNotify_FireWeaponVolley FireVolleyNotify;
 
-//		`SHAPEMGR.DrawSphere(SourceLocation, vect(15,15,15), MakeLinearColor(0,0,1,1), true);
-//		`SHAPEMGR.DrawSphere(ImpactLocation, vect(15,15,15), MakeLinearColor(0,0,1,1), true);
+	//The archetypes for the projectiles come from the weapon entity archetype
+	WeaponEntity = XComWeapon(UseWeapon.m_kEntity);
+
+	if( WeaponEntity != none )
+	{
+		FireVolleyNotify = new class'AnimNotify_FireWeaponVolley';
+		FireVolleyNotify.NumShots = 1;
+		FireVolleyNotify.ShotInterval = 0.3f;
+		FireVolleyNotify.bCosmeticVolley = true;
+
+		NewProjectile = class'WorldInfo'.static.GetWorldInfo().Spawn(class'X2UnifiedProjectile', , , , , WeaponEntity.DefaultProjectileTemplate);
+		NewProjectile.ConfigureNewProjectileCosmetic(FireVolleyNotify, AbilityContext, , , self, SourceLocation, TargetLocation, true);
+		NewProjectile.GotoState('Executing');
+	}
 }
 
 function PlaySoundCustom(int Index)
@@ -93,15 +113,36 @@ function PlaySoundCustom(int Index)
 	if (SFX != none && SFX.IsA('SoundCue'))
 		PlaySound(SoundCue(SFX), true, , , AbilityContext.InputContext.TargetLocations[Index]);
 }
+function CompleteAction()
+{
+	EndVolleyConstants( none ); //end everything just to be safe and not leak projectiles that are just hanging around, executing and doing nothing
+
+	if(class'XComTacticalGRI'.static.GetReactionFireSequencer().IsReactionFire(AbilityContext))
+	{
+		class'XComTacticalGRI'.static.GetReactionFireSequencer().PopReactionFire(AbilityContext);		
+	}
+
+	if( !bNotifiedTargets && IsTimedOut() )
+	{
+		NotifyTargetsAbilityApplied();
+	}
+
+	// I bet you never knew about this ;')
+	super(X2Action).CompleteAction();
+}
+
+function float GetDelayModifier()
+{
+//	Commented out until I figure out a way for it to play nice with Zip mode
+//	if( ShouldPlayZipMode() || ZombieMode() )
+//		return class'X2TacticalGameRuleset'.default.ZipModeDelayModifier;
+//	else
+		return `SYNC_FRAND(-.2, .3);
+}
 
 simulated state Executing
 {
 Begin:
-	PreviousWeapon = XComWeapon(UnitPawn.Weapon);
-	UnitPawn.SetCurrentWeapon(XComWeapon(UseWeapon.m_kEntity));
-
-	Unit.CurrentFireAction = self;
-
 	Offset = `SYNC_RAND(10 , 12);
 
 	for( TimeDelayIndex = 0; TimeDelayIndex < ProjectileTimeDelaySecArray.Length; ++TimeDelayIndex )
@@ -119,19 +160,8 @@ Begin:
 		Sleep(0.01f);
 	}
 
-	UnitPawn.SetCurrentWeapon(PreviousWeapon);
-
 //	Sleep(0.5f * GetDelayModifier()); // Sleep to allow destruction to be seen
 	Sleep(0.5f);
 
 	CompleteAction();
-}
-
-function float GetDelayModifier()
-{
-//	Commented out until I figure out a way for it to play nice with Zip mode
-//	if( ShouldPlayZipMode() || ZombieMode() )
-//		return class'X2TacticalGameRuleset'.default.ZipModeDelayModifier;
-//	else
-		return `SYNC_FRAND(-.2, .3);
 }
