@@ -137,6 +137,9 @@ static function X2DataTemplate CreateSupport_Orbital_Offensive_IonCannon_Stage1(
 	IonCannon_Stage1TargetEffect = new class'X2Effect_SpawnAOEIndicator';
 	Template.AddShooterEffect(IonCannon_Stage1TargetEffect);
 
+	// Reserved in the ability trigger as an EL that will intercept the Scatter mod
+	Template.AbilityTriggers.AddItem(CreateFixScatterZLevelEventListener());
+
 	Template.BuildNewGameStateFn = TypicalSupportStrike_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 	Template.AlternateFriendlyNameFn = TypicalSupportStrike_AlternateFriendlyName;
