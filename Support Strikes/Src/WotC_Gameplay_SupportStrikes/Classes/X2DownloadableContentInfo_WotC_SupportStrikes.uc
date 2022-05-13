@@ -517,3 +517,28 @@ static function BuildDynamicIntelCost(out string strDescription, name TemplateNa
 	
 	strDescription $= "]";
 }
+
+exec function PrintUnitAbilityTemplateNames()
+{
+    local XComTacticalController    TacticalController;
+    local XComGameState_Unit        UnitState;
+	local XComGameState_Ability     AbilityState;
+	local XComGameStateHistory      History;
+	local StateObjectReference      AbilityRef;
+
+	History = `XCOMHISTORY;
+
+    TacticalController = XComTacticalController(`BATTLE.GetALocalPlayerController());
+	UnitState = XComTacticalCheatManager(TacticalController.CheatManager).GetClosestUnitToCursor();
+
+    if (UnitState != none)
+	{
+		`log("-- LIST OF ABILITIES FOR UNIT: " $ UnitState.ObjectID $ ", " $ UnitState.GetFullName() $ " --");
+		foreach UnitState.Abilities(AbilityRef)
+		{
+			AbilityState = XComGameState_Ability(History.GetGameStateForObjectID(AbilityRef.ObjectID));
+			`log(AbilityState.GetMyTemplateName() @ AbilityState.ToString());
+		}
+		`log("--END LIST--");
+	}
+}
