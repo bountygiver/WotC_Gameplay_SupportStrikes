@@ -344,6 +344,10 @@ function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, i
 	NewSoldierState.SetSkillLevel(NewRank);
 	NewSoldierState.SetXPForRank(NewRank);
 	NewSoldierState.StartingRank = NewRank;
+
+	while (NewSoldierState.CanRankUpSoldier()) {
+		NewSoldierState.RankUpSoldier(NewGameState);
+	}
 	
 	//	
 	/*	Background	*/
@@ -354,7 +358,7 @@ function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, i
 	//
 	/*	Inventory	*/
 	//
-	NewSoldierState.ApplyInventoryLoadout(NewGameState);
+	NewSoldierState.ApplyInventoryLoadout(NewGameState, PreGenData.CharacterTemplate[RandomChar].LoadoutName);
 	
 	// Swap weapons after applying loadout. Only applies to custom units defined the dataset
 	if (!GenerateRandomCharacters)

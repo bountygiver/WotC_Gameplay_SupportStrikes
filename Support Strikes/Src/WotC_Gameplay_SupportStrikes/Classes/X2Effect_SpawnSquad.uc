@@ -120,6 +120,8 @@ function TriggerSpawnEvent(const out EffectAppliedData ApplyEffectParameters, XC
 		EffectTargetUnit.SetUnitFloatValue(name(default.SpawnedUnitValueName $ Idx), SpawnedUnit.ObjectID, eCleanup_BeginTurn);
 		//	Do some final hair licking for each newly spawned soldier
 		OnSpawnComplete(ApplyEffectParameters, StrikeTactical.XComResistanceRNFIDs[i], NewGameState);
+
+		`XEVENTMGR .TriggerEvent('UnitSpawned', SpawnedUnit, SpawnedUnit);
 		
 		Idx++;
 	}

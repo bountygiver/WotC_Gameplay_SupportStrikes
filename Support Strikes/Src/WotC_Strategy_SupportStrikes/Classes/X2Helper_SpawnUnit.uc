@@ -9,6 +9,7 @@ struct SpawnCharacterData
 	var name TemplateName;
 	var string CharacterPoolName;
 	var name WPNCategory;		// GiveItem executes if true for possible primary and secondary weapons
+	var name LoadoutName;
 	structdefaultproperties
 	{
 		CharacterPoolName = "";
