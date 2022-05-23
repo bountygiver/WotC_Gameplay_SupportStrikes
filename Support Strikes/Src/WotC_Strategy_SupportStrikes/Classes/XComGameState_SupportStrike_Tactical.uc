@@ -104,13 +104,11 @@ function CreateRNFSoldiers(XComGameState StartState)
 	//
 	for(Index = 0; Index < default.MaxPilots; ++Index)
 	{
-		RandomChar = -1;
+		RandomChar = 0;	//We start at the next index then pop it off once done
 
 		//Roll a soldier at random if there's more than x elements, and pop the data out
 		if (PilotData.CharacterTemplate.Length > default.MaxPilots)
 			RandomChar = `SYNC_RAND(0, PilotData.CharacterTemplate.Length);
-		else
-			RandomChar = 0;	//We start at the next index then pop it off once done
 
 		CharacterTemplate = CharTemplateMgr.FindCharacterTemplate(PilotData.CharacterTemplate[RandomChar].TemplateName);
 		
@@ -293,7 +291,7 @@ function XComGameState_Unit CreateSoldiersInternal(XComGameState NewGameState, i
 	{
 		GenerateRandomCharacters = false;
 
-		RandomChar = -1;
+		RandomChar = 0;	//We start at the next index then pop it off once done
 
 		//Roll a soldier at random if there's more than 4 elements, and pop the data out
 		if (PreGenData.CharacterTemplate.Length > default.MaxPreGenSoldiers)

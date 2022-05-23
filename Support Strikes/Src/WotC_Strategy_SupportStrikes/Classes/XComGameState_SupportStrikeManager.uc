@@ -221,7 +221,7 @@ static function OnExitPostMissionSequence(XComGameState NewGameState)
 		SupportStrikeMgr.bValid						= false;
 		SupportStrikeMgr.bInvalid_NoResources		= false;
 		SupportStrikeMgr.bInvalid_PartialResources	= false;
-		SupportStrikeMgr.bInvalid_HeightClearance	= true;
+		SupportStrikeMgr.bInvalid_HeightClearance	= false;
 
 		XComHQ = XComGameState_HeadquartersXCom(NewGameState.ModifyStateObject(class'XComGameState_HeadquartersXCom', XComHQ.ObjectID));
 
