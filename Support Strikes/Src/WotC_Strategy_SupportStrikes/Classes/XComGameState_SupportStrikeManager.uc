@@ -69,6 +69,7 @@ var bool												bIonCannonUnlocked;
 
 // Special bool for Heli Drop In
 var bool												bHeliDropInPreLoadUnits;
+var bool												bEnableVagueOrders;
 
 // When this is implemented, control the condition that causes the ability to appear
 var bool												bHeliDropInCalled;
